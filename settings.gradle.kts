@@ -17,10 +17,14 @@ dependencyResolutionManagement {
 rootProject.name = "quine"
 
 include(
+    ":app",
     ":core-common",
     ":core-design",
     ":core-gateway",
     ":core-loop",
     ":core-storage",
     ":core-tools",
+    ":feature-chat",
+    ":feature-onboarding",
+    ":feature-settings",
 )

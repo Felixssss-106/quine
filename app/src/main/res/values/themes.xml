@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      不引 material-components：M0 的界面全部由 Compose 绘制，
+      这里只需要一个「无 ActionBar + 正确窗口底色」的宿主主题，避免冷启动白闪。
+    -->
+    <style name="Theme.Quine" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/quine_window_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

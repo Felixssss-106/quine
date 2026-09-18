@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  启动图标底色与窗口底色。图标底色只放这里（不放 values-night），
+  否则浅色图标会在深色模式下被覆盖成黑底。
+-->
+<resources>
+    <color name="ic_launcher_light_background">#FFFFFF</color>
+    <color name="ic_launcher_dark_background">#0D0D0D</color>
+
+    <color name="quine_window_bg">#FFFFFF</color>
+</resources>
