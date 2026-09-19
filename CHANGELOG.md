@@ -5,6 +5,15 @@
 
 ## [Unreleased]
 
+### Added · M1 底座（进行中）
+
+- `core-storage`：任务与快照的数据层 —— `TaskRun` / `TaskStep` / `Snapshot` 三张表 +
+  `TaskDao` + v1→v2 迁移。数据模型直接取 `agent-prompt.md` §2.6，不是另起炉灶。
+  - 迁移只新增表，不动 `conversations` / `messages`；有仪器测试守着「升级后旧会话不丢」。
+  - `Snapshot.blobRef` 是内容寻址（同一内容只存一份），回滚 = 把 blob 写回原路径。
+- `docs/plans/m1.md` 里的三个前置决定已自行定下（Alpine 起步 / 旧版先实测再定策略 /
+  自用验收三件真事取自简报 §3.1 与 §3.4 的验收句），均标注可推翻。
+
 ### Added · M0 骨架
 
 工程与基础设施：
