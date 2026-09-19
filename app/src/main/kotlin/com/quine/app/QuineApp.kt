@@ -63,11 +63,18 @@ fun QuineApp(container: AppContainer) {
             }
 
             composable(Routes.SANDBOX_SETUP) {
+                // 屏二有两个入口：首启流程（完事进聊天）、设置页（完事回设置页）。
+                // 不分辨来源的话，从设置页搭完会被扔到聊天页，用户找不到回去的路。
+                val fromSettings = navController.previousBackStackEntry?.destination?.route == Routes.SETTINGS
                 SandboxSetupRoute(
                     deps = container.sandboxSetupDeps,
                     onDone = {
-                        navController.navigate(Routes.CHAT) {
-                            popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        if (fromSettings) {
+                            navController.popBackStack()
+                        } else {
+                            navController.navigate(Routes.CHAT) {
+                                popUpTo(Routes.ONBOARDING) { inclusive = true }
+                            }
                         }
                     },
                 )
@@ -108,6 +115,9 @@ fun QuineApp(container: AppContainer) {
                 SettingsRoute(
                     deps = container.settingsDeps,
                     onBack = { navController.popBackStack() },
+                    // 跳过去重搭沙箱。屏二「已就绪」时会自己进主界面，
+                    // 用户再回设置页时 refreshSandbox 会把状态刷对。
+                    onRebuildSandbox = { navController.navigate(Routes.SANDBOX_SETUP) },
                 )
             }
         }

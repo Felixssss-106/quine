@@ -35,4 +35,12 @@ interface SettingsDeps {
 
     /** 当前生效的工作区名字。 */
     suspend fun workspaceLabel(): String
+
+    /**
+     * Linux 沙箱是否已搭好。
+     *
+     * 首启屏二有「暂时跳过搭建」的出口 —— 跳过的用户需要一个回来的地方，
+     * 否则那是一次单向门：跳过去就再也装不上了。
+     */
+    fun isSandboxReady(): Boolean
 }

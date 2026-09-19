@@ -213,21 +213,28 @@ class AppContainer(private val app: Application) {
         override suspend fun workspaceLabel(): String = workspaces.workspace().label
     }
 
+    /**
+     * 沙箱安装器提到容器层：**屏二与设置页共用同一个实例**。
+     *
+     * 一个安装器 = 一个 `rootfs` 目录 = 一份 `.quine-ready` 标记。
+     * 分成两个实例的话，设置页读到的就绪状态和屏二实际装的地方就不是一回事了
+     * —— 那种 bug 只有在"明明搭好了却显示没搭好"时才会被发现。
+     */
+    private val sandboxInstaller: SandboxInstaller by lazy {
+        SandboxInstaller(
+            root = File(app.filesDir, ROOTFS_DIR),
+            source = PendingRootfsSource(),
+        )
+    }
+
     private inner class SandboxSetupDepsImpl : SandboxSetupDeps {
 
-        private val installer: SandboxInstaller by lazy {
-            SandboxInstaller(
-                root = File(app.filesDir, ROOTFS_DIR),
-                source = PendingRootfsSource(),
-            )
-        }
-
-        override fun isSandboxReady(): Boolean = installer.isReady()
+        override fun isSandboxReady(): Boolean = sandboxInstaller.isReady()
 
         override suspend fun installSandbox(onState: suspend (SandboxState) -> Unit): SandboxState =
-            installer.install(onState)
+            sandboxInstaller.install(onState)
 
-        override fun clearSandbox() = installer.clearRoot()
+        override fun clearSandbox() = sandboxInstaller.clearRoot()
 
         override suspend fun completeOnboarding() = settingsStore.setOnboarded(true)
     }
@@ -350,5 +357,7 @@ class AppContainer(private val app: Application) {
         override suspend fun saveSafTreeUri(uri: String?) = settingsStore.setSafTreeUri(uri)
 
         override suspend fun workspaceLabel(): String = workspaces.workspace().label
+
+        override fun isSandboxReady(): Boolean = sandboxInstaller.isReady()
     }
 }

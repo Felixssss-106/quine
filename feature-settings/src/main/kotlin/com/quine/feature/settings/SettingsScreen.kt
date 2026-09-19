@@ -60,6 +60,8 @@ import kotlinx.coroutines.delay
 fun SettingsRoute(
     deps: SettingsDeps,
     onBack: () -> Unit,
+    /** 跳去首启屏二（重新搭建沙箱）。屏二搭完会自己回主界面。 */
+    onRebuildSandbox: () -> Unit,
 ) {
     val viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(deps))
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -98,7 +100,11 @@ fun SettingsRoute(
         onSelectIcon = viewModel::selectIcon,
         onSelectTrust = viewModel::selectTrust,
         onConsumeMessage = viewModel::consumeMessage,
+        onRebuildSandbox = onRebuildSandbox,
     )
+
+    // 从屏二返回时刷新：沙箱可能刚搭好（或刚被清掉），init 不会重跑。
+    LaunchedEffect(Unit) { viewModel.refreshSandbox() }
 }
 
 @Composable
@@ -116,6 +122,7 @@ fun SettingsScreen(
     onSelectIcon: (IconVariant) -> Unit,
     onSelectTrust: (TrustLevel) -> Unit,
     onConsumeMessage: () -> Unit,
+    onRebuildSandbox: () -> Unit,
 ) {
     val colors = QuineTheme.colors
     val dimens = QuineTheme.dimens
@@ -296,6 +303,31 @@ fun SettingsScreen(
                 text = "切换后桌面图标会变化，个别机型需等几秒。",
                 style = typography.caption,
                 color = colors.textTertiary,
+            )
+
+            SectionGap()
+
+            // ---- 本地工作间（Linux 沙箱）----
+            // 首启屏二允许「暂时跳过搭建」—— 这里是那扇门的回头路。
+            SectionHeader(
+                title = "本地工作间",
+                hint = if (state.sandboxReady) "已搭好" else "还没搭好",
+            )
+
+            Spacer(Modifier.height(dimens.grid * 3))
+            Text(
+                text = if (state.sandboxReady) {
+                    "沙箱可用，能在里面跑命令。"
+                } else {
+                    "还没搭好，所以不能跑命令 —— 改文件、搜索、预览、回滚都不受影响。"
+                },
+                style = typography.footnote,
+                color = colors.textSecondary,
+            )
+            Spacer(Modifier.height(dimens.grid * 3))
+            QuineSecondaryButton(
+                text = if (state.sandboxReady) "重新搭建" else "现在搭建",
+                onClick = onRebuildSandbox,
             )
 
             SectionGap()

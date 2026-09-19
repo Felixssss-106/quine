@@ -41,6 +41,8 @@ data class SettingsUiState(
     val safTreeUri: String? = null,
     val workspaceLabel: String = "",
     val appVersion: String = "",
+    /** Linux 沙箱是否就绪；没搭好 = 不能跑命令（文件工具不受影响）。 */
+    val sandboxReady: Boolean = false,
     val message: String? = null,
 ) {
     val isCustom: Boolean get() = ProviderPresets.byId(presetId).isCustom
@@ -81,6 +83,7 @@ class SettingsViewModel(private val deps: SettingsDeps) : ViewModel() {
                     safTreeUri = settings.safTreeUri,
                     workspaceLabel = deps.workspaceLabel(),
                     appVersion = deps.appVersion,
+                    sandboxReady = deps.isSandboxReady(),
                 )
             }
         }
@@ -199,6 +202,14 @@ class SettingsViewModel(private val deps: SettingsDeps) : ViewModel() {
     }
 
     fun consumeMessage() = _state.update { it.copy(message = null) }
+
+    /**
+     * 重新读一次沙箱状态。
+     *
+     * 从屏二搭完沙箱返回设置页时，`init` 不会重跑 —— 不刷一次就会一直显示
+     * 「还没搭好」，把刚装好的说成没装。
+     */
+    fun refreshSandbox() = _state.update { it.copy(sandboxReady = deps.isSandboxReady()) }
 
     private fun SettingsUiState.toProviderConfig(): ProviderConfig {
         val preset = ProviderPresets.byId(presetId)
