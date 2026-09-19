@@ -1,7 +1,7 @@
 package com.quine.core.tools.builtin
 
 import com.quine.core.common.ErrorKind
-import com.quine.core.tools.FakeSnapshotter
+import com.quine.core.tools.FakeSnapshots
 import com.quine.core.tools.ToolContext
 import com.quine.core.tools.workspace.PrivateWorkspace
 import kotlinx.coroutines.runBlocking
@@ -24,16 +24,16 @@ class FsWriteToolTest {
     val temp = TemporaryFolder()
 
     private lateinit var workspace: PrivateWorkspace
-    private lateinit var snapshotter: FakeSnapshotter
+    private lateinit var snapshots: FakeSnapshots
     private val tool = FsWriteTool()
 
     @Before
     fun setUp() {
         workspace = PrivateWorkspace(temp.root)
-        snapshotter = FakeSnapshotter()
+        snapshots = FakeSnapshots()
     }
 
-    private fun context() = ToolContext(workspace = workspace, snapshotter = snapshotter)
+    private fun context() = ToolContext(workspace = workspace, snapshots = snapshots)
 
     private fun args(path: String?, content: String?): JsonObject = buildJsonObject {
         path?.let { put("path", it) }
@@ -50,7 +50,7 @@ class FsWriteToolTest {
 
         assertTrue(result.ok)
         assertEquals("hello", File(temp.root, "notes/new.md").readText())
-        assertTrue(snapshotter.captures.isEmpty())
+        assertTrue(snapshots.captures.isEmpty())
     }
 
     @Test
@@ -61,16 +61,16 @@ class FsWriteToolTest {
         assertTrue(result.ok)
         assertEquals("新内容", File(temp.root, "a.md").readText())
 
-        assertEquals(1, snapshotter.captures.size)
-        assertEquals("a.md", snapshotter.captures[0].path)
-        assertEquals("旧内容", snapshotter.captures[0].oldBytes.toString(Charsets.UTF_8))
-        assertTrue(result.output.contains("可回滚"))
+        assertEquals(1, snapshots.captures.size)
+        assertEquals("a.md", snapshots.captures[0].path)
+        assertEquals("旧内容", snapshots.captures[0].oldBytes.toString(Charsets.UTF_8))
+        assertTrue(result.output.contains("回滚"))
     }
 
     @Test
     fun 快照失败就拒绝写入_绝不留下撤不回的改动() {
         File(temp.root, "a.md").writeText("旧内容")
-        snapshotter.failNext = true
+        snapshots.failNext = true
 
         val result = write("a.md", "不该被写进去")
 
@@ -84,7 +84,7 @@ class FsWriteToolTest {
         File(temp.root, "a.md").writeText("模型看到的内容")
 
         // 捕获发生在「读」与「写」之间：在这里偷偷改文件 = 真实的并发竞争
-        snapshotter.onCapture = { File(temp.root, "a.md").writeText("用户改过的内容") }
+        snapshots.onCapture = { File(temp.root, "a.md").writeText("用户改过的内容") }
 
         val result = write("a.md", "模型的改动")
 

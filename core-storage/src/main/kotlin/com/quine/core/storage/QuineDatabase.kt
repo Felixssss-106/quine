@@ -20,7 +20,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         TaskStepEntity::class,
         SnapshotEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class QuineDatabase : RoomDatabase() {
@@ -34,7 +34,7 @@ abstract class QuineDatabase : RoomDatabase() {
 
         fun create(context: Context): QuineDatabase = Room
             .databaseBuilder(context.applicationContext, QuineDatabase::class.java, NAME)
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 }
@@ -106,5 +106,17 @@ internal val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_snapshots_taskId` ON `snapshots` (`taskId`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_snapshots_path` ON `snapshots` (`path`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_snapshots_createdAt` ON `snapshots` (`createdAt`)")
+    }
+}
+
+/**
+ * v2 → v3：给 `snapshots` 加 `root`（属于哪个工作区）。
+ *
+ * 只加一列、不动任何既有数据。老快照拿到空串，回滚时按「对不上当前工作区」处理 ——
+ * 宁可拒绝，也不拿老内容去覆盖一个它不属于的文件。
+ */
+internal val MIGRATION_2_3 = object : androidx.room.migration.Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `snapshots` ADD COLUMN `root` TEXT NOT NULL DEFAULT ''")
     }
 }

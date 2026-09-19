@@ -2,7 +2,6 @@ package com.quine.core.tools.builtin
 
 import com.quine.core.common.ErrorKind
 import com.quine.core.common.QuineError
-import com.quine.core.tools.Snapshotter
 import com.quine.core.tools.Tool
 import com.quine.core.tools.ToolContext
 import com.quine.core.tools.ToolResult
@@ -46,7 +45,7 @@ class FsWriteTool : Tool {
 
         // 快照是硬约束：失败就不许写。
         val snapshotRef = if (oldBytes != null) {
-            context.snapshotter.capture(path, oldBytes)
+            context.snapshots.capture(path, oldBytes, root = workspace.label)
                 ?: return fail(context, startedAt, SNAPSHOT_FAILED)
         } else {
             null
@@ -61,8 +60,11 @@ class FsWriteTool : Tool {
                 ok = true,
                 output = buildString {
                     append("[${workspace.label}] $path — 写入 ${outcome.bytesWritten} 字节")
-                    if (snapshotRef != null) append("\n快照：$snapshotRef（可回滚）")
-                    else append("\n（新文件，无快照）")
+                    if (snapshotRef != null) {
+                        append("\n快照 ${snapshotRef.id}：可用 fs_rollback 回滚这个文件")
+                    } else {
+                        append("\n（新文件，没有旧内容可回滚）")
+                    }
                 },
                 sourceRef = "${workspace.label}:$path",
                 durationMillis = context.time.nowMillis() - startedAt,

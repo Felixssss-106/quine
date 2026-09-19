@@ -1,6 +1,6 @@
 package com.quine.core.tools.builtin
 
-import com.quine.core.tools.DenyingSnapshotter
+import com.quine.core.tools.DenyingSnapshots
 import com.quine.core.tools.ToolContext
 import com.quine.core.tools.workspace.PrivateWorkspace
 import kotlinx.coroutines.runBlocking
@@ -32,7 +32,7 @@ class FsListToolTest {
     private fun list(path: String?) = runBlocking {
         tool.execute(
             buildJsonObject { path?.let { put("path", it) } },
-            ToolContext(workspace = workspace, snapshotter = DenyingSnapshotter),
+            ToolContext(workspace = workspace, snapshots = DenyingSnapshots),
         )
     }
 

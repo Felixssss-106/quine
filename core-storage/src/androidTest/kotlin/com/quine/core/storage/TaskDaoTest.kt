@@ -24,7 +24,7 @@ class TaskDaoTest {
     fun setUp() {
         context.deleteDatabase(DB)
         database = Room.databaseBuilder(context, QuineDatabase::class.java, DB)
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 
@@ -141,7 +141,7 @@ class TaskDaoTest {
      * 这里手工造一个 v1 的数据库，跑完迁移后确认会话与消息都还在。
      */
     @Test
-    fun 升级到v2后旧会话与消息不丢() = runBlocking {
+    fun 升级到v3后旧会话与消息不丢() = runBlocking {
         val name = "upgrade.db"
         context.deleteDatabase(name)
 
@@ -168,7 +168,7 @@ class TaskDaoTest {
         }
 
         val upgraded = Room.databaseBuilder(context, QuineDatabase::class.java, name)
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
         upgraded.openHelper.writableDatabase
 
@@ -178,6 +178,17 @@ class TaskDaoTest {
         // 新表可用
         upgraded.taskDao().upsertRun(run(id = "t-new"))
         assertNotNull(upgraded.taskDao().findRun("t-new"))
+
+        // v3 给 snapshots 加的 root 列可用：不写就是空串，也就是老快照的取值
+        upgraded.taskDao().upsertSnapshot(
+            SnapshotEntity(
+                id = "s-new",
+                path = "notes/a.md",
+                blobRef = "blob/sha256/ccc",
+                createdAt = 1L,
+            ),
+        )
+        assertEquals("", upgraded.taskDao().snapshot("s-new")!!.root)
 
         upgraded.close()
         context.deleteDatabase(name)

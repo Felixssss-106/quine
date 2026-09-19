@@ -1,5 +1,6 @@
 package com.quine.core.storage
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -123,6 +124,14 @@ data class SnapshotEntity(
     val path: String,
     /** 内容寻址存储的引用，例如 `blob/sha256/<hash>`。 */
     val blobRef: String,
+    /**
+     * 这条快照属于哪个工作区（`Workspace.label`）。
+     *
+     * `path` 是相对路径，而用户可以在「授权目录」与「私有工作区」之间切换 ——
+     * 没有它，回滚就会拿 A 工作区的旧内容去覆盖 B 工作区的同名文件。
+     * 空串表示「未知」（v3 之前留下的老数据），回滚时按对不上处理。
+     */
+    @ColumnInfo(defaultValue = "''") val root: String = "",
     val taskId: String? = null,
     val createdAt: Long,
 )

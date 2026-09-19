@@ -70,6 +70,9 @@ interface TaskDao {
     @Query("SELECT * FROM snapshots WHERE path = :path ORDER BY createdAt DESC LIMIT 1")
     suspend fun latestSnapshot(path: String): SnapshotEntity?
 
+    @Query("SELECT * FROM snapshots WHERE id = :id")
+    suspend fun snapshot(id: String): SnapshotEntity?
+
     @Query("SELECT * FROM snapshots WHERE blobRef = :blobRef LIMIT 1")
     suspend fun findByBlob(blobRef: String): SnapshotEntity?
 

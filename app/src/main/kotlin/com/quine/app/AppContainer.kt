@@ -26,8 +26,11 @@ import com.quine.core.storage.MessageMeta
 import com.quine.core.storage.QuineDatabase
 import com.quine.core.storage.QuineSettings
 import com.quine.core.storage.SettingsStore
+import com.quine.core.storage.SnapshotEntity
 import com.quine.core.storage.SnapshotStore
-import com.quine.core.tools.Snapshotter
+import com.quine.core.storage.TaskDao
+import com.quine.core.tools.SnapshotRef
+import com.quine.core.tools.SnapshotRegistry
 import com.quine.core.tools.ToolContext
 import com.quine.core.tools.ToolRegistry
 import com.quine.core.tools.builtin.FsReadTool
@@ -39,6 +42,7 @@ import com.quine.feature.settings.SettingsDeps
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import java.io.File
+import java.util.UUID
 
 /**
  * 手工装配（M0 不引 DI 框架）。
@@ -102,16 +106,67 @@ class AppContainer(private val app: Application) {
         )
     }
 
+    /** 快照登记处：blob 存内容，数据库存「哪个路径、什么时候、回滚用哪个 id」。 */
+    val snapshots: SnapshotRegistry by lazy {
+        StoreSnapshots(store = snapshotStore, dao = database.taskDao())
+    }
+
     private suspend fun toolContext(): ToolContext = ToolContext(
         workspace = workspaces.workspace(),
-        snapshotter = StoreSnapshotter(snapshotStore),
+        snapshots = snapshots,
     )
 
-    /** 把 `core-tools` 的快照接口接到 `core-storage` 的 blob 存储上。 */
-    private class StoreSnapshotter(private val store: SnapshotStore) : Snapshotter {
+    /**
+     * 把 `core-tools` 的快照接口接到 `core-storage` 上：
+     * 内容进 [SnapshotStore]（内容寻址），元数据进 `snapshots` 表（供回滚查询）。
+     *
+     * 两条都成功才算数 —— 只写了 blob 没登记，就等于「有备份但找不到」，
+     * 回滚时照样救不回来。
+     */
+    private class StoreSnapshots(
+        private val store: SnapshotStore,
+        private val dao: TaskDao,
+    ) : SnapshotRegistry {
+
         // 失败返回 null —— 写工具据此拒绝写入，绝不留下没有快照的改动。
-        override fun capture(path: String, oldBytes: ByteArray): String? =
-            runCatching { store.put(oldBytes) }.getOrNull()
+        override suspend fun capture(path: String, oldBytes: ByteArray, root: String): SnapshotRef? =
+            runCatching {
+                val blobRef = store.put(oldBytes)
+                val ref = SnapshotRef(
+                    id = UUID.randomUUID().toString(),
+                    path = path,
+                    blobRef = blobRef,
+                    root = root,
+                    createdAt = System.currentTimeMillis(),
+                )
+                dao.upsertSnapshot(
+                    SnapshotEntity(
+                        id = ref.id,
+                        path = ref.path,
+                        blobRef = ref.blobRef,
+                        root = ref.root,
+                        createdAt = ref.createdAt,
+                    ),
+                )
+                ref
+            }.getOrNull()
+
+        override suspend fun latestFor(path: String): SnapshotRef? =
+            runCatching { dao.latestSnapshot(path)?.toRef() }.getOrNull()
+
+        override suspend fun find(id: String): SnapshotRef? =
+            runCatching { dao.snapshot(id)?.toRef() }.getOrNull()
+
+        override suspend fun contentOf(blobRef: String): ByteArray? =
+            runCatching { store.content(blobRef) }.getOrNull()
+
+        private fun SnapshotEntity.toRef(): SnapshotRef = SnapshotRef(
+            id = id,
+            path = path,
+            blobRef = blobRef,
+            root = root,
+            createdAt = createdAt,
+        )
     }
 
     private companion object {

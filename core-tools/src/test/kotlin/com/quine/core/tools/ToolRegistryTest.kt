@@ -25,7 +25,7 @@ class ToolRegistryTest {
     private fun registry(): ToolRegistry = ToolRegistry(listOf(FsReadTool()))
 
     private fun context(workspace: Workspace = PrivateWorkspace(temp.root)) =
-        ToolContext(workspace = workspace, snapshotter = StubSnapshotter, time = fixedTime)
+        ToolContext(workspace = workspace, snapshots = StubSnapshots, time = fixedTime)
 
     @Test
     fun `暴露给模型的 schema 与工具声明一致`() {
@@ -68,7 +68,7 @@ class ToolRegistryTest {
         File(temp.root, "a.txt").writeText("hello")
         val cancelledContext = ToolContext(
             workspace = PrivateWorkspace(temp.root),
-            snapshotter = StubSnapshotter,
+            snapshots = StubSnapshots,
             cancelled = { true },
             time = fixedTime,
         )

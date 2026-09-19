@@ -66,12 +66,12 @@ data class ToolResult(
 /**
  * 工具执行上下文。
  *
- * `snapshotter` **没有默认值**：写类工具改动前必须能拿到快照，
+ * `snapshots` **没有默认值**：写类工具改动前必须能拿到快照，
  * 给默认值会让调用方在不知不觉中跳过这条红线。
  */
 data class ToolContext(
     val workspace: Workspace,
-    val snapshotter: Snapshotter,
+    val snapshots: SnapshotRegistry,
     val cancelled: () -> Boolean = { false },
     val time: TimeProvider = SystemTime,
 )

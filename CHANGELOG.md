@@ -17,10 +17,23 @@
   - `fs_write`：**拿不到快照就拒绝写入**（fail closed），绝不留下撤不回的改动；
     写入前读到的内容会作为 `expectedOldBytes` 再校验一次，挡住「读取后被别人改过」的覆盖。
   - `fs_list`：列目录，目录在前、按名排序。
-  - `Snapshotter` 接口（依赖倒置，实现在 app 层接 `SnapshotStore`）；`ToolContext.snapshotter`
-    **刻意不给默认值**，避免调用方在不知不觉中跳过快照这条红线。
+  - `SnapshotRegistry` 接口（依赖倒置，实现在 app 层接 `SnapshotStore` + `TaskDao`）；
+    `ToolContext.snapshots` **刻意不给默认值**，避免调用方在不知不觉中跳过快照这条红线。
   - 写入走「临时文件 + rename」，写到一半崩了不会留下半截文件。
-  ③ 自用验收三件真事取自简报 §3.1 / §3.4。均标注可推翻。
+- `core-tools`：`fs_rollback` —— 「改坏了一键回滚」的那一键，闭环 v1-blueprint.md §2.1 的红线。
+  - 给 `path` 就回滚该文件最近一次快照，给 `snapshot`（`fs_write` 成功时给出的 id）就回滚到那一次。
+  - **只回滚本工作区的快照**：`path` 是相对路径，而用户可在「授权目录」与「私有工作区」之间切换，
+    不记下归属就回滚 = 拿 A 的旧内容覆盖 B 的同名文件。为此 `Snapshot` 表加了 `root` 列（v2→v3 迁移）。
+  - **回滚前先给当前内容也做一份快照**，所以回滚本身还能再撤回（有测试守着「回滚的回滚」）。
+  - 与 `fs_write` 一致 fail closed：快照做不成、或 blob 已被清理，就报错且不动文件。
+  - 文件被删了也能靠快照恢复。
+  - ⚠️ `fs_rollback` 这个工具 id 不在 `agent-prompt.md` §3.9 的工具清单里（那里只列了
+    `fs_read / fs_write / fs_list / fs_search / fs_diff`），是我为实现「一键回滚」新加的 —— 待确认。
+
+- `Snapshotter` → `SnapshotRegistry`：`capture` 返回 `SnapshotRef`（含回滚用的 `id`）而非裸 `blobRef`，
+  并补上 `latestFor` / `find` / `contentOf` 三个查询方法；四个方法统一为 `suspend`
+  （背后是 Room 与磁盘 IO，在 IO 线程上 `runBlocking` 等自己是把可取消的等待变成堵死的线程）。
+- 数据库 v2 → v3：`snapshots` 表加 `root` 列（只加列、不动数据；老快照取空串，回滚时按归属不符拒绝）。
 
 ### 已闭环：Android 10–13 上执行二进制（M0 时期标记的最大风险）
 
