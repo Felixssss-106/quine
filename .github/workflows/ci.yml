@@ -33,3 +33,48 @@ jobs:
           # 用 `test` 而不是 `testDebugUnitTest`：后者只覆盖 Android 模块的 debug 变体，
           # 纯 JVM 模块（core-common / core-gateway）的测试任务叫 `test`，会被整块跳过。
           ./gradlew --no-daemon lint test assembleDebug
+
+  # 仪器测试。单独一个 job，因为它要起模拟器、慢得多，不该拖慢快速反馈。
+  #
+  # 为什么值得跑：`app` 的 IconAliasTest 守着一个灾难性的失败模式 ——
+  # 图标切换的顺序写反会让两个桌面入口同时关闭，图标彻底消失、只能重装。
+  # 「写好了但从没执行」的测试等于没写，所以这里真的跑它。
+  #
+  # 注意：这个 job 尚未在真实 CI 上观察过（本轮是在本机模拟器上验证的 19 个测试全绿）。
+  # 先设成 advisory（continue-on-error），观察一两轮稳定后再删掉这一行改成阻断。
+  instrumented:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            chmod +x ./gradlew
+            ./gradlew --no-daemon \
+              :app:connectedDebugAndroidTest \
+              :core-storage:connectedDebugAndroidTest \
+              :feature-chat:connectedDebugAndroidTest
+

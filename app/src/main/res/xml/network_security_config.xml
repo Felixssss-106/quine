@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  明文 HTTP 策略。
+
+  targetSdk 28+ 默认禁止明文流量。但 baseUrl 是用户自己填的，而自建 / 局域网模型服务
+  （Ollama、LM Studio、vLLM、公司内网网关）通常只有 http —— 一刀切拦掉会让
+  「自定义 baseUrl」这个能力在最常见的自建场景直接失效。
+
+  所以这里放开，但**风险不靠静默拦截承担**：
+  设置页在 baseUrl 是 http:// 时给一条可见警告（见 SettingsScreen 的 InsecureEndpointNotice）。
+  这符合项目的设计哲学「透明 > 一刀切」——让用户看见风险，而不是替他做决定。
+
+  预设供应商全是 https，默认路径依然加密。
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

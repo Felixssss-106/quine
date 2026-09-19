@@ -39,7 +39,7 @@ class KeystoreApiKeyStoreTest {
     }
 
     @Test
-    fun 覆盖写同一个 ref() = runBlocking {
+    fun 覆盖写同一个ref() = runBlocking {
         val store = KeystoreApiKeyStore(context)
         val keyRef = ref()
 
@@ -51,7 +51,7 @@ class KeystoreApiKeyStoreTest {
     }
 
     @Test
-    fun 不同 ref 互不干扰() = runBlocking {
+    fun 不同ref互不干扰() = runBlocking {
         val store = KeystoreApiKeyStore(context)
         val a = ref()
         val b = ref()

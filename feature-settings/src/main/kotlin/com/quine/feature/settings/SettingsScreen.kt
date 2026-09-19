@@ -185,6 +185,10 @@ fun SettingsScreen(
                     placeholder = "https://example.com/v1",
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                 )
+                if (state.isInsecureEndpoint) {
+                    Spacer(Modifier.height(dimens.grid * 2))
+                    InsecureEndpointNotice()
+                }
                 Spacer(Modifier.height(dimens.sectionGap))
             }
 
@@ -343,6 +347,50 @@ private fun SectionHeader(title: String, hint: String?) {
 @Composable
 private fun SectionGap() {
     Spacer(Modifier.height(QuineTheme.dimens.sectionGapLarge))
+}
+
+/**
+ * 明文地址的可见警告。
+ *
+ * 明文是放行的（见 `app/src/main/res/xml/network_security_config.xml` 的取舍说明），
+ * 但风险必须让用户看见 —— 文案照旧走三段式：发生了什么 / 影响 / 下一步。
+ */
+@Composable
+private fun InsecureEndpointNotice() {
+    val colors = QuineTheme.colors
+    val dimens = QuineTheme.dimens
+    val typography = QuineTheme.typography
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(dimens.radiusCard))
+            .background(colors.fill)
+            .padding(dimens.cardPadding),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(top = 6.dp)
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(colors.danger),
+        )
+        Spacer(Modifier.width(10.dp))
+        Column {
+            Text(
+                text = "这个地址没有加密。",
+                style = typography.footnote,
+                color = colors.textPrimary,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "Key 会以明文发出去。只在你自己的局域网里这样用；公网地址请换成 https。",
+                style = typography.caption,
+                color = colors.textSecondary,
+            )
+        }
+    }
 }
 
 @Composable

@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import androidx.core.content.edit
 import com.quine.core.common.QuineDispatchers
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -46,14 +47,16 @@ class KeystoreApiKeyStore(
         val payload = Base64.encodeToString(cipher.iv, Base64.NO_WRAP) +
             SEPARATOR +
             Base64.encodeToString(ciphertext, Base64.NO_WRAP)
-        prefs.edit().putString(keyOf(ref), payload).commit()
+        // 刻意用 commit = true（同步落盘）：写 Key 必须落到磁盘再返回，
+        // 否则进程随后被杀会丢掉刚接上的模型配置。反正整段跑在 IO 线程上。
+        prefs.edit(commit = true) { putString(keyOf(ref), payload) }
     }
 
     override suspend fun get(ref: String): String? = withContext(dispatcher) {
         val payload = prefs.getString(keyOf(ref), null) ?: return@withContext null
         val parts = payload.split(SEPARATOR, limit = 2)
         if (parts.size != 2) {
-            prefs.edit().remove(keyOf(ref)).commit()
+            prefs.edit(commit = true) { remove(keyOf(ref)) }
             return@withContext null
         }
         runCatching {
@@ -64,13 +67,13 @@ class KeystoreApiKeyStore(
             String(cipher.doFinal(data), Charsets.UTF_8)
         }.getOrElse {
             // 换机、Keystore 被清、密文损坏：清掉脏数据，别让用户卡在一个永远失败的 Key 上。
-            prefs.edit().remove(keyOf(ref)).commit()
+            prefs.edit(commit = true) { remove(keyOf(ref)) }
             null
         }
     }
 
     override suspend fun delete(ref: String): Unit = withContext(dispatcher) {
-        prefs.edit().remove(keyOf(ref)).commit()
+        prefs.edit(commit = true) { remove(keyOf(ref)) }
     }
 
     override suspend fun has(ref: String): Boolean = withContext(dispatcher) {

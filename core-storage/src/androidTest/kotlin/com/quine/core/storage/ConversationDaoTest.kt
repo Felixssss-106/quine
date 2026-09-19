@@ -76,7 +76,7 @@ class ConversationDaoTest {
     }
 
     @Test
-    fun 历史可以直接喂给 loop() = runBlocking {
+    fun 历史可以直接喂给loop() = runBlocking {
         val conversation = store.ensureConversation(preferredId = null)
         store.append(conversation.id, com.quine.core.gateway.ChatRole.USER, "你好")
         store.append(conversation.id, com.quine.core.gateway.ChatRole.ASSISTANT, "你好，我是 Quine。")

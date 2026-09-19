@@ -45,6 +45,15 @@ data class SettingsUiState(
 ) {
     val isCustom: Boolean get() = ProviderPresets.byId(presetId).isCustom
 
+    /**
+     * baseUrl 走明文 http。
+     *
+     * 明文是放行的（自建 / 局域网模型服务通常只有 http），但**必须让用户看见**：
+     * 静默放行等于替他做了风险决定，静默拦截又会让这个能力不可用。
+     */
+    val isInsecureEndpoint: Boolean
+        get() = baseUrl.startsWith("http://", ignoreCase = true)
+
     val canSave: Boolean
         get() = baseUrl.isNotBlank() && model.isNotBlank() && (apiKeyInput.isNotBlank() || maskedKey != null)
 

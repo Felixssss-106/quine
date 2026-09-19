@@ -24,3 +24,6 @@ Thumbs.db
 *.jks
 *.keystore
 secrets.properties
+
+# 本地 Agent 工具层数据（记忆、计划等），不随仓库分发
+.workbuddy-ai/

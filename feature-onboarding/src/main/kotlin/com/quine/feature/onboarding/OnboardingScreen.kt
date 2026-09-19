@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
@@ -46,7 +45,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.quine.core.design.component.QuineChip
 import com.quine.core.design.component.QuinePrimaryButton
-import com.quine.core.design.component.QuineSecondaryButton
 import com.quine.core.design.component.QuineTextButton
 import com.quine.core.design.component.QuineTextField
 import com.quine.core.design.theme.QuineTheme

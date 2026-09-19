@@ -20,8 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.quine.core.design.theme.QuineTheme
+import kotlin.math.roundToInt
 
 /**
  * 描边输入框（docs/visual-spec.md §4-A）：浮动标签，圆角 16。
@@ -77,7 +79,8 @@ fun QuineTextField(
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .offset(x = with(density) { shakeOffset.value.toDp() }),
+                // 抖动偏移每帧都在变，用 lambda 重载在 layout 阶段读值，避免每帧重组。
+                .offset { IntOffset(x = shakeOffset.value.roundToInt(), y = 0) },
             enabled = enabled,
             isError = isError,
             singleLine = singleLine,
