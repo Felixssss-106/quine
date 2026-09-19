@@ -34,6 +34,9 @@
   并补上 `latestFor` / `find` / `contentOf` 三个查询方法；四个方法统一为 `suspend`
   （背后是 Room 与磁盘 IO，在 IO 线程上 `runBlocking` 等自己是把可取消的等待变成堵死的线程）。
 - 数据库 v2 → v3：`snapshots` 表加 `root` 列（只加列、不动数据；老快照取空串，回滚时按归属不符拒绝）。
+- 修仪器测试 `ChatScreenRenderTest.渲染流式文本与呼吸光标` 的时序赌注：
+  assistant 文本走 Markdown 组件，要先把文本解析成节点才画得出来，首帧未必就绪。
+  改成显式等待 —— 注意这里**不能**用 `waitForIdle`，流式光标是无限动画，等到超时也不会 idle。
 
 ### 已闭环：Android 10–13 上执行二进制（M0 时期标记的最大风险）
 

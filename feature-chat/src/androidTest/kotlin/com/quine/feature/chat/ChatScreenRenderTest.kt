@@ -81,6 +81,14 @@ class ChatScreenRenderTest {
             ),
         )
 
+        // assistant 文本走的是 Markdown 组件：它要先把文本解析成节点才画得出来，
+        // 首帧未必就绪（另外两个用例断言的都是普通 Text，没有这层）。
+        // 这里等它出现再断言，而不是赌时序。
+        compose.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                compose.onNodeWithText("正在读文件", substring = true).assertExists()
+            }.isSuccess
+        }
         compose.onNodeWithText("正在读文件", substring = true).assertIsDisplayed()
     }
 
