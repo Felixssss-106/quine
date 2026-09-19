@@ -62,6 +62,7 @@ dependencies {
     implementation(project(":feature-chat"))
     implementation(project(":feature-onboarding"))
     implementation(project(":feature-settings"))
+    implementation(project(":feature-tasks"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

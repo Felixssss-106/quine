@@ -40,6 +40,15 @@ data class QuineColors(
     val onInk: Color,
     /** 抽屉 / 弹层遮罩。 */
     val scrim: Color,
+    /**
+     * 终端块底 —— **永久暗面**（page-specs §2-b）：无论深浅主题都是深色，
+     * 终端的仪式感。因此这两档**不随主题翻转**，是 colours 里唯一的例外。
+     */
+    val terminalBg: Color,
+    /** 终端正文。 */
+    val terminalText: Color,
+    /** 终端里的次级信息（提示符、路径）。 */
+    val terminalMuted: Color,
     /** 当前是否为深色主题，供个别需要分支的绘制使用。 */
     val isDark: Boolean,
 )
@@ -58,6 +67,9 @@ val LightQuineColors: QuineColors = QuineColors(
     danger = Color(0xFFFF3B30),
     onInk = Color(0xFFFFFFFF),
     scrim = Color(0x52000000),
+    terminalBg = Color(0xFF101012),
+    terminalText = Color(0xFFE6E6E8),
+    terminalMuted = Color(0xFF7A7A82),
     isDark = false,
 )
 
@@ -75,6 +87,10 @@ val DarkQuineColors: QuineColors = QuineColors(
     danger = Color(0xFFFF453A),
     onInk = Color(0xFF0D0D0D),
     scrim = Color(0x8A000000),
+    // 与浅色同值：终端永远是暗的。
+    terminalBg = Color(0xFF101012),
+    terminalText = Color(0xFFE6E6E8),
+    terminalMuted = Color(0xFF7A7A82),
     isDark = true,
 )
 

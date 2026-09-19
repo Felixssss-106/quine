@@ -6,21 +6,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.quine.core.design.theme.QuineTheme
 import com.quine.core.storage.QuineSettings
 import com.quine.feature.chat.ChatRoute
 import com.quine.feature.onboarding.OnboardingRoute
 import com.quine.feature.onboarding.SandboxSetupRoute
 import com.quine.feature.settings.SettingsRoute
+import com.quine.feature.tasks.TaskDetailRoute
+import com.quine.feature.tasks.TasksRoute
 
 private object Routes {
     const val ONBOARDING = "onboarding"
     const val SANDBOX_SETUP = "sandbox_setup"
     const val CHAT = "chat"
+    const val TASKS = "tasks"
+    const val TASK_DETAIL = "task/{taskId}"
     const val SETTINGS = "settings"
+
+    fun taskDetail(taskId: String) = "task/$taskId"
 }
 
 /**
@@ -69,6 +77,30 @@ fun QuineApp(container: AppContainer) {
                 ChatRoute(
                     deps = container.chatDeps,
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onOpenTasks = { navController.navigate(Routes.TASKS) },
+                )
+            }
+
+            composable(Routes.TASKS) {
+                TasksRoute(
+                    deps = container.tasksDeps,
+                    onOpenTask = { navController.navigate(Routes.taskDetail(it)) },
+                    onClose = { navController.popBackStack() },
+                )
+            }
+
+            composable(
+                route = Routes.TASK_DETAIL,
+                arguments = listOf(navArgument("taskId") { type = NavType.StringType }),
+            ) { entry ->
+                val taskId = entry.arguments?.getString("taskId") ?: return@composable
+                TaskDetailRoute(
+                    deps = container.tasksDeps,
+                    taskId = taskId,
+                    onBack = { navController.popBackStack() },
+                    onOpenChat = {
+                        navController.popBackStack(Routes.CHAT, inclusive = false)
+                    },
                 )
             }
 

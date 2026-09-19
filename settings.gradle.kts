@@ -28,4 +28,5 @@ include(
     ":feature-chat",
     ":feature-onboarding",
     ":feature-settings",
+    ":feature-tasks",
 )

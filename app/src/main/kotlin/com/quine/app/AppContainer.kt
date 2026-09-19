@@ -32,7 +32,13 @@ import com.quine.core.storage.SettingsStore
 import com.quine.core.storage.SnapshotEntity
 import com.quine.core.storage.SnapshotStore
 import com.quine.core.storage.TaskDao
+import com.quine.core.storage.TaskRunEntity
+import com.quine.core.storage.TaskStatus
+import com.quine.core.storage.TaskStepEntity
 import com.quine.core.tools.SnapshotRef
+import com.quine.feature.tasks.ArtifactUi
+import com.quine.feature.tasks.TasksDeps
+import com.quine.feature.tasks.toArtifact
 import com.quine.core.tools.SnapshotRegistry
 import com.quine.core.tools.ToolContext
 import com.quine.core.tools.ToolRegistry
@@ -95,6 +101,8 @@ class AppContainer(private val app: Application) {
     val sandboxSetupDeps: SandboxSetupDeps = SandboxSetupDepsImpl()
 
     val chatDeps: ChatDeps = ChatDepsImpl()
+
+    val tasksDeps: TasksDeps = TasksDepsImpl()
 
     val settingsDeps: SettingsDeps = SettingsDepsImpl()
 
@@ -281,6 +289,33 @@ class AppContainer(private val app: Application) {
         override suspend fun saveDraft(text: String) = settingsStore.setDraft(text)
 
         override suspend fun setTrustLevel(level: TrustLevel) = settingsStore.setTrustLevel(level)
+    }
+
+    /**
+     * 任务面：数据全在 `task_runs` / `task_steps` / `snapshots` 三张表里，
+     * 这里只是把它们搬过去。**不提供重试 / 批准** —— 那要等任务执行器接进来，
+     * 现在声明了就得给假实现，比不做更糟。
+     */
+    private inner class TasksDepsImpl : TasksDeps {
+
+        private val taskDao: TaskDao by lazy { database.taskDao() }
+
+        override fun observeRuns(): Flow<List<TaskRunEntity>> = taskDao.observeRuns()
+
+        override fun observeSteps(taskId: String): Flow<List<TaskStepEntity>> =
+            taskDao.observeSteps(taskId)
+
+        override suspend fun findRun(id: String): TaskRunEntity? = taskDao.findRun(id)
+
+        override suspend fun conversationTitle(id: String?): String? =
+            id?.let { database.conversationDao().findConversation(it)?.title }
+
+        override suspend fun artifacts(taskId: String): List<ArtifactUi> =
+            taskDao.snapshotsForTask(taskId).map { it.toArtifact() }
+
+        override suspend fun cancel(id: String) {
+            taskDao.markEnded(id, System.currentTimeMillis(), TaskStatus.CANCELLED.name, null)
+        }
     }
 
     private inner class SettingsDepsImpl : SettingsDeps {

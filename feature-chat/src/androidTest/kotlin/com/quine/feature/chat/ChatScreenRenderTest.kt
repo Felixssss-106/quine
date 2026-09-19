@@ -39,6 +39,7 @@ class ChatScreenRenderTest {
                     onDismissError = noop,
                     onTrustLevel = {},
                     onOpenSettings = noop,
+                    onOpenTasks = noop,
                 )
             }
         }

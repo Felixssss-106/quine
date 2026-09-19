@@ -78,6 +78,7 @@ import com.quine.core.storage.ChatMessage
 fun ChatRoute(
     deps: ChatDeps,
     onOpenSettings: () -> Unit,
+    onOpenTasks: () -> Unit,
 ) {
     val viewModel: ChatViewModel = viewModel(factory = ChatViewModel.factory(deps))
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -93,6 +94,7 @@ fun ChatRoute(
         onDismissError = viewModel::dismissError,
         onTrustLevel = viewModel::setTrustLevel,
         onOpenSettings = onOpenSettings,
+        onOpenTasks = onOpenTasks,
     )
 }
 
@@ -108,6 +110,7 @@ fun ChatScreen(
     onDismissError: () -> Unit,
     onTrustLevel: (TrustLevel) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenTasks: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -115,7 +118,7 @@ fun ChatScreen(
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .imePadding(),
     ) {
-        ChatTopBar(onOpenSettings = onOpenSettings)
+        ChatTopBar(onOpenSettings = onOpenSettings, onOpenTasks = onOpenTasks)
         QuineDivider()
 
         MessageList(
@@ -147,7 +150,7 @@ fun ChatScreen(
 }
 
 @Composable
-private fun ChatTopBar(onOpenSettings: () -> Unit) {
+private fun ChatTopBar(onOpenSettings: () -> Unit, onOpenTasks: () -> Unit) {
     val colors = QuineTheme.colors
     val dimens = QuineTheme.dimens
 
@@ -163,6 +166,13 @@ private fun ChatTopBar(onOpenSettings: () -> Unit) {
             color = colors.textPrimary,
             modifier = Modifier.weight(1f),
         )
+        TextButton(onClick = onOpenTasks) {
+            Text(
+                text = "任务",
+                style = QuineTheme.typography.footnote,
+                color = colors.textSecondary,
+            )
+        }
         TextButton(onClick = onOpenSettings) {
             Text(
                 text = "设置",
