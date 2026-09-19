@@ -124,7 +124,7 @@ fun SandboxSetupScreen(
             .padding(top = dimens.sectionGapLarge, bottom = dimens.sectionGap),
     ) {
         Text(
-            text = "搭建你的本地工作间。",
+            text = "初始化本地工作间",
             style = typography.display,
             color = colors.textPrimary,
         )
@@ -194,12 +194,12 @@ fun SandboxSetupScreen(
             // 不放这条路会被困在屏二进不了聊天 —— 真机冷启动亲历过一次。
             Spacer(Modifier.height(dimens.grid * 2))
             QuineTextButton(
-                text = "暂时跳过搭建（不能用跑命令）",
+                text = "跳过（命令执行不可用）",
                 onClick = onSkip,
             )
         } else {
             Text(
-                text = "首次约 1–3 分钟，之后秒开。占用约 200 MB。",
+                text = "首次约 1–3 分钟，占用约 200 MB。",
                 style = typography.caption,
                 color = colors.textTertiary,
             )

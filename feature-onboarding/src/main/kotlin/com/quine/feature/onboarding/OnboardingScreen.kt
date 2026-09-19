@@ -121,14 +121,14 @@ fun OnboardingScreen(
         Spacer(Modifier.height(dimens.sectionGapLarge + dimens.sectionGap))
 
         StaggeredEntrance(index = 0, reducedMotion = reduced) {
-            Text(text = "你好。", style = typography.display, color = colors.textPrimary)
+            Text(text = "Quine", style = typography.display, color = colors.textPrimary)
         }
 
         Spacer(Modifier.height(dimens.sectionGap))
 
         StaggeredEntrance(index = 1, reducedMotion = reduced) {
             Text(
-                text = "我住在你的手机里：改文件、搜资料、跑命令、做自动化。文件不出这台设备。",
+                text = "本地运行的智能体。文件保留在本机。",
                 style = typography.body,
                 color = colors.textSecondary,
             )
@@ -138,10 +138,10 @@ fun OnboardingScreen(
 
         StaggeredEntrance(index = 2, reducedMotion = reduced) {
             Column {
-                Text(text = "先接上你的模型", style = typography.headline, color = colors.textPrimary)
+                Text(text = "连接模型", style = typography.headline, color = colors.textPrimary)
                 Spacer(Modifier.height(dimens.grid))
                 Text(
-                    text = "OpenAI 兼容接口，Key 只存本机",
+                    text = "OpenAI 兼容接口",
                     style = typography.caption,
                     color = colors.textTertiary,
                 )
@@ -173,7 +173,7 @@ fun OnboardingScreen(
             QuineTextField(
                 value = state.apiKey,
                 onValueChange = onApiKeyChange,
-                label = "粘贴 API Key",
+                label = "API Key",
                 isError = state.keyError != null,
                 errorText = state.keyError,
                 shakeSignal = state.shakeSignal,
@@ -217,10 +217,10 @@ fun OnboardingScreen(
 
         StaggeredEntrance(index = 5, reducedMotion = reduced) {
             Column {
-                QuineTextButton(text = "怎么拿 Key？", onClick = onToggleKeyHelp)
+                QuineTextButton(text = "获取 API Key", onClick = onToggleKeyHelp)
                 Spacer(Modifier.height(dimens.grid))
                 Text(
-                    text = "Key 只存本机（加密），不经过我们的服务器。",
+                    text = "Key 加密存储于本机。",
                     style = typography.caption,
                     color = colors.textTertiary,
                 )
@@ -239,7 +239,7 @@ fun OnboardingScreen(
         Spacer(Modifier.height(dimens.grid))
 
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            QuineTextButton(text = "先随便逛逛（功能受限）", onClick = onSkip)
+            QuineTextButton(text = "稍后配置", onClick = onSkip)
         }
 
         Spacer(Modifier.height(dimens.sectionGapLarge))
@@ -253,17 +253,16 @@ fun OnboardingScreen(
         // 「不静默失败」：拒绝授权也要说清楚发生了什么、影响是什么、下一步怎么办。
         AlertDialog(
             onDismissRequest = onDismissFallback,
-            title = { Text(text = "没选目录也可以", style = QuineTheme.typography.headline) },
+            title = { Text(text = "使用默认工作区", style = QuineTheme.typography.headline) },
             text = {
                 Text(
-                    text = "我会先用应用私有工作区（${state.workspaceLabel}），" +
-                        "文件照样不出这台设备。想换成你自己的目录，随时去 设置 → 工作目录。",
+                    text = "当前工作区：${state.workspaceLabel}。可在 设置 → 工作目录 中更改。",
                     style = QuineTheme.typography.body,
                     color = QuineTheme.colors.textSecondary,
                 )
             },
             confirmButton = {
-                TextButton(onClick = onDismissFallback) { Text("知道了，开始") }
+                TextButton(onClick = onDismissFallback) { Text("确定") }
             },
         )
     }
@@ -273,10 +272,10 @@ fun OnboardingScreen(
 private fun KeyHelpDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "怎么拿 Key？", style = QuineTheme.typography.headline) },
+        title = { Text(text = "获取 API Key", style = QuineTheme.typography.headline) },
         text = {
             Text(
-                text = "去你选的供应商后台，注册后创建一个 API Key，复制粘贴到这里。\n\n" +
+                text = "在供应商控制台创建 API Key：\n\n" +
                     "· DeepSeek：platform.deepseek.com\n" +
                     "· Kimi：platform.moonshot.cn\n" +
                     "· 智谱 GLM：open.bigmodel.cn\n" +
@@ -285,7 +284,7 @@ private fun KeyHelpDialog(onDismiss: () -> Unit) {
                 color = QuineTheme.colors.textSecondary,
             )
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("好") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("确定") } },
     )
 }
 

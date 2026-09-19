@@ -67,6 +67,44 @@ class OpenAiRequestBuilderTest {
     }
 
     @Test
+    fun `reasoning effort is omitted when off`() {
+        // 关闭 = 整个参数不出现。发一个对方不认识的取值比不发更容易 400。
+        val payload = OpenAiRequestBuilder.build(
+            QuineJson,
+            LlmRequest(
+                model = "m",
+                messages = listOf(LlmMessage(ChatRole.USER, "hi")),
+                reasoningEffort = com.quine.core.common.ReasoningEffort.OFF,
+            ),
+        )
+        val root = QuineJson.parseToJsonElement(payload) as JsonObject
+        assertFalse(root.containsKey("reasoning_effort"))
+    }
+
+    @Test
+    fun `reasoning effort is sent when enabled`() {
+        for ((effort, wire) in listOf(
+            com.quine.core.common.ReasoningEffort.LOW to "low",
+            com.quine.core.common.ReasoningEffort.MEDIUM to "medium",
+            com.quine.core.common.ReasoningEffort.HIGH to "high",
+        )) {
+            val payload = OpenAiRequestBuilder.build(
+                QuineJson,
+                LlmRequest(
+                    model = "m",
+                    messages = listOf(LlmMessage(ChatRole.USER, "hi")),
+                    reasoningEffort = effort,
+                ),
+            )
+            val root = QuineJson.parseToJsonElement(payload) as JsonObject
+            assertEquals(
+                wire,
+                (root["reasoning_effort"] as JsonPrimitive).content,
+            )
+        }
+    }
+
+    @Test
     fun `non-stream request omits stream options`() {
         val payload = OpenAiRequestBuilder.build(
             QuineJson,

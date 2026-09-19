@@ -63,7 +63,7 @@ class SandboxSetupScreenTest {
     fun 标题与四步都在() {
         render(SandboxState.Working(SandboxStage.CHECK_DEVICE, 0f, emptyList()))
 
-        compose.onNodeWithText("搭建你的本地工作间。").assertIsDisplayed()
+        compose.onNodeWithText("初始化本地工作间").assertIsDisplayed()
         compose.onNodeWithText("① 检查设备环境").assertIsDisplayed()
         compose.onNodeWithText("② 展开 Linux 工作区").assertIsDisplayed()
         compose.onNodeWithText("③ 初始化文件系统").assertIsDisplayed()
@@ -74,7 +74,7 @@ class SandboxSetupScreenTest {
     fun 进行中显示底部小字() {
         render(SandboxState.Working(SandboxStage.CHECK_DEVICE, 0.2f, emptyList()))
 
-        compose.onNodeWithText("首次约 1–3 分钟，之后秒开。占用约 200 MB。").assertIsDisplayed()
+        compose.onNodeWithText("首次约 1–3 分钟，占用约 200 MB。").assertIsDisplayed()
     }
 
     @Test
@@ -90,7 +90,7 @@ class SandboxSetupScreenTest {
     fun 失败时不再显示底部小字() {
         render(failed, expanded = true)
 
-        compose.onNodeWithText("首次约 1–3 分钟，之后秒开。占用约 200 MB。").assertDoesNotExist()
+        compose.onNodeWithText("首次约 1–3 分钟，占用约 200 MB。").assertDoesNotExist()
     }
 
     @Test
@@ -141,8 +141,8 @@ class SandboxSetupScreenTest {
         }
 
         compose.onNodeWithText("卡在第 ③ 步：存储空间不够。").assertIsDisplayed()
-        compose.onNodeWithText("暂时跳过搭建（不能用跑命令）").assertIsDisplayed()
-        compose.onNodeWithText("暂时跳过搭建（不能用跑命令）").performClick()
+        compose.onNodeWithText("跳过（命令执行不可用）").assertIsDisplayed()
+        compose.onNodeWithText("跳过（命令执行不可用）").performClick()
         assertTrue(skipped)
     }
 
@@ -150,6 +150,6 @@ class SandboxSetupScreenTest {
     fun 未失败时不显示跳过按钮() {
         // 跳过只在失败态出现 —— 在跑的时候强行跳过等于中途打断，反而更糟。
         render(SandboxState.Working(SandboxStage.CHECK_DEVICE, 0f, emptyList()))
-        compose.onNodeWithText("暂时跳过搭建（不能用跑命令）").assertDoesNotExist()
+        compose.onNodeWithText("跳过（命令执行不可用）").assertDoesNotExist()
     }
 }

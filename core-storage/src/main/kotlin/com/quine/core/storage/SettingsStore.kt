@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.quine.core.common.IconVariant
+import com.quine.core.common.ReasoningEffort
 import com.quine.core.common.TrustLevel
 import com.quine.core.gateway.ProviderConfig
 import com.quine.core.gateway.ProviderPresets
@@ -30,6 +31,8 @@ data class QuineSettings(
     val safTreeUri: String? = null,
     val iconVariant: IconVariant = IconVariant.LIGHT,
     val trustLevel: TrustLevel = TrustLevel.STANDARD,
+    /** 思考等级；默认关闭 —— 不是所有模型都支持，默认发参数反而更容易出错。 */
+    val reasoningEffort: ReasoningEffort = ReasoningEffort.OFF,
     val activeConversationId: String? = null,
     /** composer 草稿。M0 只有单会话，因此是单值；多会话时按会话分键。 */
     val draft: String = "",
@@ -75,6 +78,9 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setTrustLevel(level: TrustLevel) = edit { it[KEY_TRUST_LEVEL] = level.name }
 
+    suspend fun setReasoningEffort(effort: ReasoningEffort) =
+        edit { it[KEY_REASONING_EFFORT] = effort.name }
+
     suspend fun setActiveConversationId(id: String?) = edit { prefs ->
         if (id.isNullOrBlank()) prefs.remove(KEY_ACTIVE_CONVERSATION) else prefs[KEY_ACTIVE_CONVERSATION] = id
     }
@@ -101,6 +107,7 @@ class SettingsStore(private val context: Context) {
             safTreeUri = this[KEY_SAF_TREE_URI],
             iconVariant = IconVariant.fromId(this[KEY_ICON_VARIANT]),
             trustLevel = TrustLevel.fromId(this[KEY_TRUST_LEVEL]),
+            reasoningEffort = ReasoningEffort.fromId(this[KEY_REASONING_EFFORT]),
             activeConversationId = this[KEY_ACTIVE_CONVERSATION],
             draft = this[KEY_DRAFT].orEmpty(),
         )
@@ -117,6 +124,7 @@ class SettingsStore(private val context: Context) {
         val KEY_SAF_TREE_URI = stringPreferencesKey("saf_tree_uri")
         val KEY_ICON_VARIANT = stringPreferencesKey("icon_variant")
         val KEY_TRUST_LEVEL = stringPreferencesKey("trust_level")
+        val KEY_REASONING_EFFORT = stringPreferencesKey("reasoning_effort")
         val KEY_ACTIVE_CONVERSATION = stringPreferencesKey("active_conversation_id")
         val KEY_DRAFT = stringPreferencesKey("draft")
     }

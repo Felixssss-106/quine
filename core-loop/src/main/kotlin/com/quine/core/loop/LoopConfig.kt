@@ -1,5 +1,7 @@
 package com.quine.core.loop
 
+import com.quine.core.common.ReasoningEffort
+
 /**
  * loop 的可调参数。默认值即 M0 的取舍（agent-prompt.md §2.3）。
  */
@@ -12,6 +14,8 @@ data class LoopConfig(
     val maxTurnRetries: Int = 2,
     val temperature: Double? = null,
     val maxTokens: Int? = null,
+    /** 思考等级；由 app 层把设置里的选择传进来（loop 不认识 storage）。 */
+    val reasoningEffort: ReasoningEffort? = null,
     val systemPrompt: String = DEFAULT_SYSTEM_PROMPT,
 ) {
     companion object {

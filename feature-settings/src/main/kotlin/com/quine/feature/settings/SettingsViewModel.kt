@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.quine.core.common.IconVariant
+import com.quine.core.common.ReasoningEffort
 import com.quine.core.common.TrustLevel
 import com.quine.core.gateway.LlmException
 import com.quine.core.gateway.ProviderConfig
@@ -38,6 +39,12 @@ data class SettingsUiState(
     val saving: Boolean = false,
     val iconVariant: IconVariant = IconVariant.LIGHT,
     val trustLevel: TrustLevel = TrustLevel.STANDARD,
+    val reasoningEffort: ReasoningEffort = ReasoningEffort.OFF,
+    /** 拉取到的模型 id 列表；null = 还没拉过。 */
+    val availableModels: List<String>? = null,
+    val loadingModels: Boolean = false,
+    /** 模型列表拉取失败的提示（简短）；null = 没有失败。 */
+    val modelsError: String? = null,
     val safTreeUri: String? = null,
     val workspaceLabel: String = "",
     val appVersion: String = "",
@@ -60,7 +67,7 @@ data class SettingsUiState(
         get() = baseUrl.isNotBlank() && model.isNotBlank() && (apiKeyInput.isNotBlank() || maskedKey != null)
 
     val keyHint: String
-        get() = maskedKey?.let { "已存：$it（留空则继续用它）" } ?: "还没有存过 Key"
+        get() = maskedKey?.let { "已保存：$it" } ?: "未保存"
 }
 
 class SettingsViewModel(private val deps: SettingsDeps) : ViewModel() {
@@ -80,12 +87,15 @@ class SettingsViewModel(private val deps: SettingsDeps) : ViewModel() {
                     maskedKey = deps.maskedApiKey(settings.provider.apiKeyRef),
                     iconVariant = settings.iconVariant,
                     trustLevel = settings.trustLevel,
+                    reasoningEffort = settings.reasoningEffort,
                     safTreeUri = settings.safTreeUri,
                     workspaceLabel = deps.workspaceLabel(),
                     appVersion = deps.appVersion,
                     sandboxReady = deps.isSandboxReady(),
                 )
             }
+            // 模型名为空时自动取第一个可用模型：省掉一次「我该填什么」的困惑。
+            if (settings.provider.model.isBlank()) autoPickModel()
         }
         viewModelScope.launch {
             deps.settings.collect { settings ->
@@ -126,7 +136,7 @@ class SettingsViewModel(private val deps: SettingsDeps) : ViewModel() {
         if (current.checking) return
         if (current.baseUrl.isBlank() || current.model.isBlank()) {
             _state.update {
-                it.copy(checkResult = CheckResult.Failed("先把 baseUrl 和模型名填好，再测。"))
+                it.copy(checkResult = CheckResult.Failed("请填写接口地址与模型名。"))
             }
             return
         }
@@ -165,7 +175,7 @@ class SettingsViewModel(private val deps: SettingsDeps) : ViewModel() {
                     saving = false,
                     apiKeyInput = "",
                     maskedKey = deps.maskedApiKey(ProviderConfig.DEFAULT_API_KEY_REF) ?: it.maskedKey,
-                    message = "已保存。",
+                    message = "已保存",
                 )
             }
         }
@@ -195,13 +205,60 @@ class SettingsViewModel(private val deps: SettingsDeps) : ViewModel() {
                 it.copy(
                     safTreeUri = uri,
                     workspaceLabel = deps.workspaceLabel(),
-                    message = if (uri == null) "已切回应用私有工作区。" else "工作目录已更新。",
+                    message = if (uri == null) "已恢复默认工作区" else "工作目录已更新",
                 )
             }
         }
     }
 
     fun consumeMessage() = _state.update { it.copy(message = null) }
+
+    /**
+     * 拉取模型列表。失败时只留一句简短提示 ——
+     * 列表拿不到不影响手动填写模型名，所以这里不阻塞、不弹窗。
+     */
+    fun refreshModels() {
+        if (_state.value.loadingModels) return
+        viewModelScope.launch {
+            _state.update { it.copy(loadingModels = true, modelsError = null) }
+            val result = deps.fetchModels()
+            _state.update {
+                it.copy(
+                    loadingModels = false,
+                    availableModels = result.getOrNull() ?: it.availableModels,
+                    modelsError = result.exceptionOrNull()?.let(::describe),
+                )
+            }
+        }
+    }
+
+    /** 列表里有就用列表里的第一个，省得用户猜模型名。 */
+    fun autoPickModel() {
+        viewModelScope.launch {
+            if (_state.value.loadingModels) return@launch
+            _state.update { it.copy(loadingModels = true, modelsError = null) }
+            val result = deps.fetchModels()
+            val picked = result.getOrNull()?.firstOrNull()
+            _state.update {
+                it.copy(
+                    loadingModels = false,
+                    availableModels = result.getOrNull() ?: it.availableModels,
+                    modelsError = result.exceptionOrNull()?.let(::describe),
+                    model = it.model.ifBlank { picked.orEmpty() },
+                )
+            }
+            // 自动选中也算一次保存：否则下次进来又要重选。
+            if (picked != null && _state.value.canSave) save()
+        }
+    }
+
+    fun selectReasoningEffort(effort: ReasoningEffort) {
+        if (_state.value.reasoningEffort == effort) return
+        viewModelScope.launch {
+            deps.setReasoningEffort(effort)
+            _state.update { it.copy(reasoningEffort = effort) }
+        }
+    }
 
     /**
      * 重新读一次沙箱状态。
@@ -224,7 +281,7 @@ class SettingsViewModel(private val deps: SettingsDeps) : ViewModel() {
     }
 
     private fun describe(error: Throwable): String {
-        val quine = (error as? LlmException)?.error ?: return error.message ?: "连不上。"
+        val quine = (error as? LlmException)?.error ?: return error.message ?: "连接失败"
         return quine.message + quine.nextStep
     }
 

@@ -100,7 +100,7 @@ suspend fun TaskRunEntity.toUi(conversationTitle: suspend (String?) -> String?):
         status = status,
         statusLabel = status.label(),
         durationLabel = durationLabel(),
-        originLabel = conversationTitle(originConversationId)?.let { "来自会话《$it》" },
+        originLabel = conversationTitle(originConversationId)?.let { "来源会话：$it" },
         createdAtLabel = formatClock(createdAt),
         errorText = errorJson,
     )

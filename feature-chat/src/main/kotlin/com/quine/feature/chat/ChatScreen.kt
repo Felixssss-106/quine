@@ -194,6 +194,13 @@ private fun MessageList(
     val live = state.live
     val total = visible.size + if (live != null) 1 else 0
 
+    // 「贴底跟随」：用户往上翻就停止跟随，翻回底部自动恢复。
+    // 没有这个开关，流式时每来一个增量都会把视图拽回底部，用户根本没法往上翻看前面的内容。
+    var stickToBottom by remember { mutableStateOf(true) }
+    LaunchedEffect(listState.canScrollForward) {
+        stickToBottom = !listState.canScrollForward
+    }
+
     // 首帧不滚 —— 这样旋转 / 杀进程恢复出来的滚动位置不会被覆盖（「状态永不丢」）。
     var lastTotal by remember { mutableIntStateOf(-1) }
     LaunchedEffect(total, live?.text?.length) {
@@ -201,8 +208,24 @@ private fun MessageList(
             lastTotal = total
             return@LaunchedEffect
         }
-        if (total > 0) listState.scrollToItem(total - 1)
         lastTotal = total
+        if (!stickToBottom || total <= 0) return@LaunchedEffect
+
+        val lastIndex = total - 1
+        val info = listState.layoutInfo
+        val lastVisible = info.visibleItemsInfo.lastOrNull()
+
+        if (lastVisible == null || lastVisible.index < lastIndex) {
+            // 新条目还不在视野里：先把它滚进来。
+            listState.scrollToItem(lastIndex)
+            return@LaunchedEffect
+        }
+
+        // 流式增长时**只把超出视口的那一截顶掉**。
+        // 之前是 scrollToItem(lastIndex)：条目一旦比视口高，会把它的顶部吸到视口顶部，
+        // 于是「滚上去 → 又长出来 → 再滚上去」，看起来就是持续的抖动和重排。
+        val overshoot = (lastVisible.offset + lastVisible.size) - info.viewportEndOffset
+        if (overshoot > 0) listState.scrollToItem(lastIndex, lastVisible.offset - overshoot)
     }
 
     LazyColumn(
@@ -398,9 +421,9 @@ private fun StatusBar(
     val dimens = QuineTheme.dimens
     val typography = QuineTheme.typography
 
-    val message = error?.message ?: "已停止。"
-    val impact = error?.impact ?: "这次生成被中断，已完成的部分还在。"
-    val nextStep = error?.nextStep ?: "可以重新发送，或先改一改再发。"
+    val message = error?.message ?: "已停止"
+    val impact = error?.impact ?: "生成已中断，已输出内容保留。"
+    val nextStep = error?.nextStep ?: "可重新发送或修改后重试。"
 
     Column(
         modifier = Modifier
@@ -459,7 +482,7 @@ private fun Composer(
                 bottom = dimens.composerBottomInset,
             ),
     ) {
-        // 模式行：档位胶囊常驻（docs/page-specs.md §3）
+        // 模式行：权限模式胶囊常驻（docs/page-specs.md §3）
         QuineTrustPill(
             labels = TrustLevel.entries.map { it.label },
             selectedIndex = trustLevel.ordinal,
@@ -471,7 +494,7 @@ private fun Composer(
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             RoundActionButton(
                 contentDescription = "更多",
-                onClick = { notice = "附件与「从别的 App 分享进来」在后续版本上线。" },
+                onClick = { notice = "附件功能暂未开放。" },
             ) {
                 PlusGlyph(color = colors.onInk)
             }
@@ -498,9 +521,9 @@ private fun Composer(
                         if (draft.isEmpty()) {
                             Text(
                                 text = if (focused) {
-                                    "描述任务、粘贴东西、说要改哪个文件"
+                                    "描述任务，或指定要修改的文件"
                                 } else {
-                                    "让它干点什么…"
+                                    "输入指令"
                                 },
                                 style = typography.body,
                                 color = colors.textTertiary,
@@ -516,13 +539,13 @@ private fun Composer(
             RoundActionButton(
                 contentDescription = when {
                     streaming -> "停止"
-                    draft.isBlank() -> "按住说话"
+                    draft.isBlank() -> "语音输入"
                     else -> "发送"
                 },
                 onClick = {
                     when {
                         streaming -> onStop()
-                        draft.isBlank() -> notice = "语音输入在后续版本上线。"
+                        draft.isBlank() -> notice = "语音输入暂未开放。"
                         else -> onSend()
                     }
                 },

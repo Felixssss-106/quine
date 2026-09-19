@@ -82,7 +82,8 @@ fun QuineChip(
 }
 
 /**
- * 档位胶囊（docs/visual-spec.md §4-C）：保守 / 标准 / 狂奔 = **文字 + 圆点，不靠颜色**。
+ * 权限模式胶囊（docs/visual-spec.md §4-C）：请求批准 / 自动批准 / 完全放行 =
+ * **文字 + 圆点，不靠颜色**。
  * 圆点位移 120ms + 文字 crossfade（docs/motion-spec.md §2.8）。
  */
 @Composable

@@ -140,7 +140,7 @@ class TasksViewModelTest {
         val detail = vm.detail.value
         assertEquals("整理周报", detail.run?.title)
         assertEquals("00:42", detail.run?.durationLabel)
-        assertEquals("来自会话《帮我整理周报》", detail.run?.originLabel)
+        assertEquals("来源会话：帮我整理周报", detail.run?.originLabel)
         assertEquals(listOf("notes/todo.md"), detail.artifacts.map { it.name })
     }
 

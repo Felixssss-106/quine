@@ -147,7 +147,7 @@ class OnboardingViewModel(private val deps: OnboardingDeps) : ViewModel() {
         val SELECTABLE_PRESETS: List<ProviderPreset> =
             ProviderPresets.all.filter { it.baseUrl.isNotBlank() }
 
-        const val KEY_ERROR_TEXT = "Key 好像不对，再检查一下？"
+        const val KEY_ERROR_TEXT = "Key 无效，请检查。"
 
         private const val MIN_KEY_LENGTH = 8
         private const val CHECK_DEBOUNCE_MILLIS = 400L

@@ -126,6 +126,7 @@ class AgentLoop(
                     tools = tools.schemas(),
                     temperature = config.temperature,
                     maxTokens = config.maxTokens,
+                    reasoningEffort = config.reasoningEffort,
                 )
 
                 val turn = launch {

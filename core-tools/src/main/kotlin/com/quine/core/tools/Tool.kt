@@ -9,7 +9,7 @@ import kotlinx.serialization.json.JsonObject
 
 /**
  * 危险等级（agent-prompt.md §2.7）：决定是否拦截。
- * M0 只做声明；审批矩阵（信任档位 × 危险级）在 M1 生效。
+ * M0 只做声明；审批矩阵（权限模式 × 危险级）在 M1 生效。
  */
 enum class RiskLevel {
     /** 安全：沙箱 / 工作区内。 */

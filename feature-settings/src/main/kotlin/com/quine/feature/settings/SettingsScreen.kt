@@ -46,11 +46,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.quine.core.common.IconVariant
+import com.quine.core.common.ReasoningEffort
 import com.quine.core.common.TrustLevel
 import com.quine.core.design.component.QuineChip
 import com.quine.core.design.component.QuineDivider
 import com.quine.core.design.component.QuinePrimaryButton
 import com.quine.core.design.component.QuineSecondaryButton
+import com.quine.core.design.component.QuineTextButton
 import com.quine.core.design.component.QuineTextField
 import com.quine.core.design.component.QuineTrustPill
 import com.quine.core.design.theme.QuineTheme
@@ -99,6 +101,8 @@ fun SettingsRoute(
         onClearDirectory = { viewModel.onSafPicked(null) },
         onSelectIcon = viewModel::selectIcon,
         onSelectTrust = viewModel::selectTrust,
+        onSelectReasoningEffort = viewModel::selectReasoningEffort,
+        onRefreshModels = viewModel::refreshModels,
         onConsumeMessage = viewModel::consumeMessage,
         onRebuildSandbox = onRebuildSandbox,
     )
@@ -121,6 +125,8 @@ fun SettingsScreen(
     onClearDirectory: () -> Unit,
     onSelectIcon: (IconVariant) -> Unit,
     onSelectTrust: (TrustLevel) -> Unit,
+    onSelectReasoningEffort: (ReasoningEffort) -> Unit,
+    onRefreshModels: () -> Unit,
     onConsumeMessage: () -> Unit,
     onRebuildSandbox: () -> Unit,
 ) {
@@ -163,7 +169,7 @@ fun SettingsScreen(
             }
 
             // ---- 模型 ----
-            SectionHeader("模型", "OpenAI 兼容接口，Key 只存本机（加密）")
+            SectionHeader("模型", "OpenAI 兼容接口")
 
             Spacer(Modifier.height(dimens.grid * 3))
 
@@ -207,6 +213,50 @@ fun SettingsScreen(
                 singleLine = true,
             )
 
+            // 可用模型：拉到了就直接点选，不用手抄模型名。
+            Spacer(Modifier.height(dimens.grid * 3))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = when {
+                        state.loadingModels -> "获取中"
+                        state.modelsError != null -> "获取失败"
+                        state.availableModels.isNullOrEmpty() -> "可用模型"
+                        else -> "可用模型（${state.availableModels.size}）"
+                    },
+                    style = typography.caption,
+                    color = colors.textTertiary,
+                    modifier = Modifier.weight(1f),
+                )
+                QuineTextButton(text = "刷新", onClick = onRefreshModels)
+            }
+
+            state.modelsError?.let { error ->
+                Spacer(Modifier.height(dimens.grid))
+                Text(
+                    text = error,
+                    style = typography.caption,
+                    color = colors.textTertiary,
+                )
+            }
+
+            state.availableModels?.takeIf { it.isNotEmpty() }?.let { models ->
+                Spacer(Modifier.height(dimens.grid * 2))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    models.forEach { id ->
+                        QuineChip(
+                            text = id,
+                            selected = id == state.model,
+                            onClick = { onModelChange(id) },
+                        )
+                    }
+                }
+            }
+
             Spacer(Modifier.height(dimens.sectionGap))
 
             QuineTextField(
@@ -232,13 +282,13 @@ fun SettingsScreen(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 QuineSecondaryButton(
-                    text = if (state.checking) "测试中…" else "测试连通性",
+                    text = if (state.checking) "测试中" else "测试连接",
                     onClick = onTestConnection,
                     enabled = !state.checking,
                     modifier = Modifier.weight(1f),
                 )
                 QuinePrimaryButton(
-                    text = if (state.saving) "保存中…" else "保存",
+                    text = if (state.saving) "保存中" else "保存",
                     onClick = onSave,
                     enabled = state.canSave,
                     busy = state.saving,
@@ -249,7 +299,7 @@ fun SettingsScreen(
             state.checkResult?.let { result ->
                 Spacer(Modifier.height(dimens.sectionGap))
                 when (result) {
-                    CheckResult.Ok -> NoticeCard(text = "连上了，Key 可以用。")
+                    CheckResult.Ok -> NoticeCard(text = "连接成功，Key 有效。")
                     is CheckResult.Failed -> NoticeCard(text = result.text, danger = true)
                 }
             }
@@ -298,13 +348,6 @@ fun SettingsScreen(
                 onClick = { onSelectIcon(IconVariant.DARK) },
             )
 
-            Spacer(Modifier.height(dimens.grid * 2))
-            Text(
-                text = "切换后桌面图标会变化，个别机型需等几秒。",
-                style = typography.caption,
-                color = colors.textTertiary,
-            )
-
             SectionGap()
 
             // ---- 本地工作间（Linux 沙箱）----
@@ -317,9 +360,9 @@ fun SettingsScreen(
             Spacer(Modifier.height(dimens.grid * 3))
             Text(
                 text = if (state.sandboxReady) {
-                    "沙箱可用，能在里面跑命令。"
+                    "已就绪，可执行命令。"
                 } else {
-                    "还没搭好，所以不能跑命令 —— 改文件、搜索、预览、回滚都不受影响。"
+                    "未初始化，命令执行不可用。"
                 },
                 style = typography.footnote,
                 color = colors.textSecondary,
@@ -332,8 +375,20 @@ fun SettingsScreen(
 
             SectionGap()
 
-            // ---- 信任档位 ----
-            SectionHeader(title = "信任档位", hint = "决定哪些操作需要你点头")
+            // ---- 思考等级 ----
+            SectionHeader(title = "思考等级", hint = "部分模型支持")
+
+            Spacer(Modifier.height(dimens.grid * 3))
+            QuineTrustPill(
+                labels = ReasoningEffort.entries.map { it.label },
+                selectedIndex = state.reasoningEffort.ordinal,
+                onSelect = { onSelectReasoningEffort(ReasoningEffort.entries[it]) },
+            )
+
+            SectionGap()
+
+            // ---- 权限模式 ----
+            SectionHeader(title = "权限模式", hint = "决定哪些操作需要你确认")
 
             Spacer(Modifier.height(dimens.grid * 3))
             QuineTrustPill(
@@ -343,7 +398,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(dimens.grid * 2))
             Text(
-                text = "审批矩阵在下一个版本生效；现在只记录你的选择。",
+                text = "审批规则将在后续版本生效，当前仅记录选择。",
                 style = typography.caption,
                 color = colors.textTertiary,
             )
@@ -417,7 +472,7 @@ private fun InsecureEndpointNotice() {
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = "Key 会以明文发出去。只在你自己的局域网里这样用；公网地址请换成 https。",
+                text = "Key 将以明文传输。公网地址请使用 https。",
                 style = typography.caption,
                 color = colors.textSecondary,
             )

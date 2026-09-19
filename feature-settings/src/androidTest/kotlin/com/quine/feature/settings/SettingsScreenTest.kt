@@ -44,6 +44,8 @@ class SettingsScreenTest {
                     onClearDirectory = noop,
                     onSelectIcon = {},
                     onSelectTrust = {},
+                    onSelectReasoningEffort = {},
+                    onRefreshModels = noop,
                     onConsumeMessage = noop,
                     onRebuildSandbox = onRebuildSandbox,
                 )
@@ -81,10 +83,35 @@ class SettingsScreenTest {
         assertTrue(clicked)
     }
 
+    @Test fun reasoning_effort_selector_shows_all_levels() {
+        render(SettingsUiState(reasoningEffort = com.quine.core.common.ReasoningEffort.OFF))
+
+        scrollTo("思考等级").assertIsDisplayed()
+        scrollTo("关闭").assertIsDisplayed()
+        scrollTo("低").assertIsDisplayed()
+        scrollTo("中").assertIsDisplayed()
+        scrollTo("高").assertIsDisplayed()
+    }
+
+    @Test fun available_models_render_as_chips() {
+        render(SettingsUiState(availableModels = listOf("alpha", "beta")))
+
+        scrollTo("可用模型（2）").assertIsDisplayed()
+        scrollTo("alpha").assertIsDisplayed()
+        scrollTo("beta").assertIsDisplayed()
+    }
+
+    @Test fun models_error_shows_short_hint() {
+        render(SettingsUiState(modelsError = "连接失败"))
+
+        scrollTo("获取失败").assertIsDisplayed()
+        scrollTo("连接失败").assertIsDisplayed()
+    }
+
     @Test fun not_ready_explains_what_still_works() {
         // 看不出「不能跑命令但改文件照常」的话，用户会以为整个应用废了。
         render(SettingsUiState(sandboxReady = false))
-        scrollTo("还没搭好，所以不能跑命令 —— 改文件、搜索、预览、回滚都不受影响。")
+        scrollTo("未初始化，命令执行不可用。")
             .assertIsDisplayed()
     }
 }

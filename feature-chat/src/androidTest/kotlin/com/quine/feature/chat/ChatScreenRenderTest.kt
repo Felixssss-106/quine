@@ -67,7 +67,7 @@ class ChatScreenRenderTest {
         compose.onNodeWithText("看看 a.txt").assertIsDisplayed()
         compose.onNodeWithText("读了 a.txt").assertIsDisplayed()
         compose.onNodeWithText("让它干点什么…").assertIsDisplayed()
-        compose.onNodeWithText("标准").assertIsDisplayed()
+        compose.onNodeWithText("自动批准").assertIsDisplayed()
     }
 
     @Test
@@ -116,13 +116,13 @@ class ChatScreenRenderTest {
     }
 
     @Test
-    fun 档位胶囊显示当前档位() {
+    fun 权限模式胶囊显示当前模式() {
         render(
             ChatUiState(loaded = true, messages = emptyList(), draft = "", trustLevel = TrustLevel.RUNAWAY),
         )
 
-        compose.onNodeWithText("狂奔").assertIsDisplayed()
-        compose.onNodeWithText("保守").assertIsDisplayed()
+        compose.onNodeWithText("完全放行").assertIsDisplayed()
+        compose.onNodeWithText("请求批准").assertIsDisplayed()
     }
 
     private fun message(

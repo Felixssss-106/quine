@@ -8,7 +8,7 @@ import com.quine.core.gateway.ToolCallRequest
  *
  * `Idle → Planning → Streaming → ToolCall → …（循环）… → Done / Failed / Cancelled`
  *
- * `WaitingApproval` 在 M0 只定义不进入 —— 审批矩阵（信任档位 × 危险级）在 M1 接上 UI。
+ * `WaitingApproval` 在 M0 只定义不进入 —— 审批矩阵（权限模式 × 危险级）在 M1 接上 UI。
  */
 sealed interface LoopState {
     data object Idle : LoopState

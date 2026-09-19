@@ -15,6 +15,8 @@ object OpenAiRequestBuilder {
             put("stream", stream)
             request.temperature?.let { put("temperature", it) }
             request.maxTokens?.let { put("max_tokens", it) }
+            // 关闭 = 整个参数不出现；发送一个对方不认识的取值比不发更容易 400。
+            request.reasoningEffort?.wireValue?.let { put("reasoning_effort", it) }
             if (stream) {
                 put(
                     "stream_options",

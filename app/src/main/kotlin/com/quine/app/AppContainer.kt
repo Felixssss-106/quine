@@ -9,7 +9,9 @@ import com.quine.core.common.TrustLevel
 import com.quine.core.gateway.ChatRole
 import com.quine.core.gateway.LlmErrors
 import com.quine.core.gateway.LlmException
+import com.quine.core.common.ReasoningEffort
 import com.quine.core.gateway.LlmMessage
+import com.quine.core.gateway.LlmProvider
 import com.quine.core.gateway.OpenAiProviderFactory
 import com.quine.core.gateway.ProviderConfig
 import com.quine.core.gateway.ProviderProbe
@@ -106,17 +108,20 @@ class AppContainer(private val app: Application) {
 
     val settingsDeps: SettingsDeps = SettingsDepsImpl()
 
+    /** 按给定配置建一个 provider（Key 从 Keystore 取，明文不进调用栈之外）。 */
+    private fun newProviderFor(provider: ProviderConfig): LlmProvider = providerFactory.create(
+        baseUrl = provider.baseUrl,
+        model = provider.model,
+        apiKeyProvider = { apiKeyStore.get(provider.apiKeyRef) },
+    )
+
     /** 每次发送都新建一个 loop：loop 内部带取消状态，不复用。 */
     suspend fun newAgentLoop(): AgentLoop {
-        val provider = settingsStore.settings.first().provider
+        val settings = settingsStore.settings.first()
         return AgentLoop(
-            provider = providerFactory.create(
-                baseUrl = provider.baseUrl,
-                model = provider.model,
-                apiKeyProvider = { apiKeyStore.get(provider.apiKeyRef) },
-            ),
+            provider = newProviderFor(settings.provider),
             tools = toolRegistry,
-            config = LoopConfig(),
+            config = LoopConfig(reasoningEffort = settings.reasoningEffort),
             retryPolicy = RetryPolicy(),
         )
     }
@@ -359,5 +364,11 @@ class AppContainer(private val app: Application) {
         override suspend fun workspaceLabel(): String = workspaces.workspace().label
 
         override fun isSandboxReady(): Boolean = sandboxInstaller.isReady()
+
+        override suspend fun setReasoningEffort(effort: ReasoningEffort) =
+            settingsStore.setReasoningEffort(effort)
+
+        override suspend fun fetchModels(): Result<List<String>> =
+            newProviderFor(settingsStore.settings.first().provider).models()
     }
 }

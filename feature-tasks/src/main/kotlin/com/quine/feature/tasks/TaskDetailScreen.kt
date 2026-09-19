@@ -83,7 +83,7 @@ fun TaskDetailScreen(
     val colors = QuineTheme.colors
     val dimens = QuineTheme.dimens
 
-    // 「安静 ↔ 啰嗦」：控制条目默认展开程度（page-specs §2 状态与边界）。
+    // 「简洁 ↔ 详细」：控制条目默认展开程度（page-specs §2 状态与边界）。
     var verbosity by rememberSaveable { mutableFloatStateOf(1f) }
     var filter by rememberSaveable { mutableIntStateOf(0) }
     var showAll by rememberSaveable { mutableStateOf(false) }
@@ -121,7 +121,7 @@ fun TaskDetailScreen(
             if (run == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "这个任务已经不在了。",
+                        text = "任务不存在",
                         style = QuineTheme.typography.footnote,
                         color = colors.textSecondary,
                     )
@@ -151,7 +151,7 @@ fun TaskDetailScreen(
                     if (filtered.isEmpty()) {
                         item {
                             Text(
-                                text = "这一类是空的 —— ${TimelineFilter.entries[filter].label}这次没有内容。",
+                                text = "当前筛选无内容：${TimelineFilter.entries[filter].label}这次没有内容。",
                                 style = QuineTheme.typography.caption,
                                 color = colors.textTertiary,
                                 modifier = Modifier.padding(dimens.pageMargin),
@@ -180,7 +180,7 @@ fun TaskDetailScreen(
                                     color = colors.textTertiary,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable(onClickLabel = "展开其余条目") { showAll = true }
+                                        .clickable(onClickLabel = "展开全部") { showAll = true }
                                         .padding(dimens.pageMargin),
                                 )
                             }
@@ -259,8 +259,8 @@ private fun Chip(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * 「安静 ↔ 啰嗦」滑杆（page-specs §2 状态与边界）：
- * 安静 = 全折叠；适中 = 只展开最新一条；啰嗦 = 全展开。
+ * 「简洁 ↔ 详细」滑杆（page-specs §2 状态与边界）：
+ * 简洁 = 全折叠；适中 = 只展开最新一条；详细 = 全展开。
  */
 @Composable
 private fun VerbositySlider(value: Float, onValueChange: (Float) -> Unit) {
@@ -272,7 +272,7 @@ private fun VerbositySlider(value: Float, onValueChange: (Float) -> Unit) {
             .padding(horizontal = dimens.pageMargin),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = "安静", style = QuineTheme.typography.caption, color = colors.textTertiary)
+        Text(text = "简洁", style = QuineTheme.typography.caption, color = colors.textTertiary)
         Slider(
             value = value,
             onValueChange = onValueChange,
@@ -287,7 +287,7 @@ private fun VerbositySlider(value: Float, onValueChange: (Float) -> Unit) {
                 inactiveTrackColor = colors.line,
             ),
         )
-        Text(text = "啰嗦", style = QuineTheme.typography.caption, color = colors.textTertiary)
+        Text(text = "详细", style = QuineTheme.typography.caption, color = colors.textTertiary)
     }
 }
 
@@ -330,7 +330,7 @@ private fun TaskHeaderCard(run: TaskRunUi) {
 
         if (run.status == TaskStatus.QUEUED) {
             Text(
-                text = "排队等待中",
+                text = "排队中",
                 style = QuineTheme.typography.footnote,
                 color = colors.textSecondary,
                 modifier = Modifier.padding(top = 8.dp),
@@ -396,7 +396,7 @@ private fun TimelineEntry(
     }
 }
 
-/** 产物区（page-specs §2-4）：这次留下了什么。 */
+/** 产物区（page-specs §2-4）：产物。 */
 @Composable
 private fun ArtifactSection(artifacts: List<ArtifactUi>) {
     val colors = QuineTheme.colors
@@ -408,7 +408,7 @@ private fun ArtifactSection(artifacts: List<ArtifactUi>) {
     ) {
         QuineDivider()
         Text(
-            text = "这次留下了什么",
+            text = "产物",
             style = QuineTheme.typography.headline,
             color = colors.textPrimary,
             modifier = Modifier.padding(top = 16.dp),
@@ -436,12 +436,6 @@ private fun ArtifactSection(artifacts: List<ArtifactUi>) {
             }
         }
         // 「全部导出 / 分享」要等导出通道定下来（M2），先不放点了没反应的按钮。
-        Text(
-            text = "改动前都留了快照，可在聊天里回滚。",
-            style = QuineTheme.typography.caption,
-            color = colors.textTertiary,
-            modifier = Modifier.padding(top = 10.dp),
-        )
     }
 }
 
@@ -474,7 +468,7 @@ private fun ActionBar(
 
         if (status == TaskStatus.NEEDS_APPROVAL) {
             Text(
-                text = "批准 / 拒绝要等审批链路接进来。",
+                text = "审批功能暂未开放。",
                 style = QuineTheme.typography.caption,
                 color = colors.textTertiary,
                 modifier = Modifier.padding(bottom = 8.dp),
@@ -482,7 +476,7 @@ private fun ActionBar(
         }
         if (status == TaskStatus.FAILED) {
             Text(
-                text = errorText ?: "失败了，原因没记下来。",
+                text = errorText ?: "执行失败",
                 style = QuineTheme.typography.caption,
                 color = colors.danger,
                 maxLines = 3,
@@ -496,7 +490,7 @@ private fun ActionBar(
                 QuineSecondaryButton(text = "停止", onClick = onCancel, modifier = Modifier.weight(1f))
                 Spacer(modifier = Modifier.width(12.dp))
             }
-            QuineTextButton(text = "去聊天里看看", onClick = onOpenChat)
+            QuineTextButton(text = "前往会话", onClick = onOpenChat)
         }
     }
 }

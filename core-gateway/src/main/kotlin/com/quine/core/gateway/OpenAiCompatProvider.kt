@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -81,6 +84,61 @@ class OpenAiCompatProvider(
             Result.failure(LlmException(LlmErrors.network(error)))
         }
     }
+
+    override suspend fun models(): Result<List<String>> = withContext(dispatcher) {
+        val apiKey = apiKeyProvider()?.takeIf { it.isNotBlank() }
+            ?: return@withContext Result.failure(LlmException(LlmErrors.missingKey()))
+        try {
+            client.newCall(
+                Request.Builder()
+                    .url(endpoint("models"))
+                    .header("Authorization", "Bearer $apiKey")
+                    .get()
+                    .build(),
+            ).execute().use { response ->
+                val text = response.body?.string().orEmpty()
+                if (!response.isSuccessful) {
+                    return@use Result.failure(LlmException(LlmErrors.http(response.code, text)))
+                }
+                val ids = parseModelIds(text)
+                if (ids.isEmpty()) {
+                    Result.failure(
+                        LlmException(
+                            LlmErrors.server(
+                                message = "模型列表为空。",
+                                impact = "无法自动选择模型。",
+                                nextStep = "在下方手动填写模型名。",
+                            ),
+                        ),
+                    )
+                } else {
+                    Result.success(ids)
+                }
+            }
+        } catch (error: IOException) {
+            Result.failure(LlmException(LlmErrors.network(error)))
+        } catch (error: Exception) {
+            // JSON 解析失败也算失败，但不该崩 —— 这一段在启动路径上。
+            Result.failure(
+                LlmException(
+                    LlmErrors.server(
+                        message = "模型列表解析失败。",
+                        impact = "无法自动选择模型。",
+                        nextStep = "在下方手动填写模型名。",
+                    ),
+                ),
+            )
+        }
+    }
+
+    /** 从 /models 响应里取 id；坏条目跳过而不是整份失败。 */
+    private fun parseModelIds(body: String): List<String> = runCatching {
+        val root = json.parseToJsonElement(body).jsonObject
+        val array = root["data"]?.jsonArray ?: return emptyList()
+        array.mapNotNull { element ->
+            runCatching { element.jsonObject["id"]?.jsonPrimitive?.content }.getOrNull()
+        }.filter { it.isNotBlank() }.sorted()
+    }.getOrDefault(emptyList())
 
     /** 有些兼容服务没有 /models 端点：用一次 1 token 的最小请求验证 Key。 */
     private fun probeChat(apiKey: String): Result<Unit> {

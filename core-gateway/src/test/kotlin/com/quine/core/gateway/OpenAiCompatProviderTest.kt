@@ -180,6 +180,57 @@ class OpenAiCompatProviderTest {
         assertEquals(ErrorKind.AUTH, error.error.kind)
     }
 
+    @Test
+    fun `models parses sorted ids`() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"object":"list","data":[{"id":"zeta"},{"id":"alpha"},{"id":"mid"}]}""",
+            ),
+        )
+
+        val result = provider().models()
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("alpha", "mid", "zeta"), result.getOrNull())
+        assertEquals("/v1/models", server.takeRequest().path)
+    }
+
+    @Test
+    fun `models skips broken entries instead of failing whole list`() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"data":[{"id":"good"},{"nope":1},{"id":""},{"id":"also-good"}]}""",
+            ),
+        )
+
+        val result = provider().models()
+
+        assertEquals(listOf("also-good", "good"), result.getOrNull())
+    }
+
+    @Test
+    fun `models reports failure with three parts`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
+
+        val result = provider().models()
+
+        assertTrue(result.isFailure)
+        val error = result.exceptionOrNull() as LlmException
+        // 三段式：发生了什么 / 影响 / 下一步 —— 少一段用户就不知道该怎么办
+        assertTrue(error.error.message.isNotBlank())
+        assertTrue(error.error.impact.isNotBlank())
+        assertTrue(error.error.nextStep.isNotBlank())
+    }
+
+    @Test
+    fun `models empty list is a failure not a silent success`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"data":[]}"""))
+
+        val result = provider().models()
+
+        assertTrue(result.isFailure)
+    }
+
     private suspend fun captureFailure(block: suspend () -> Unit): LlmException? = try {
         block()
         null

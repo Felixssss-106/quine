@@ -102,7 +102,7 @@ fun TasksScreen(
         ) {
             if (state.running.isNotEmpty()) {
                 TaskSection(
-                    title = "在干活",
+                    title = "进行中",
                     tasks = state.running,
                     onOpenTask = onOpenTask,
                     onCancel = onCancel,
@@ -110,7 +110,7 @@ fun TasksScreen(
             }
             if (state.needsApproval.isNotEmpty()) {
                 TaskSection(
-                    title = "等你点头",
+                    title = "待确认",
                     tasks = state.needsApproval,
                     onOpenTask = onOpenTask,
                     onCancel = onCancel,
@@ -126,7 +126,7 @@ fun TasksScreen(
             }
             if (state.failed.isNotEmpty()) {
                 TaskSection(
-                    title = "没成",
+                    title = "未完成",
                     tasks = state.failed,
                     onOpenTask = onOpenTask,
                     onCancel = onCancel,
@@ -150,7 +150,7 @@ private fun EmptyTasks(modifier: Modifier = Modifier) {
             color = colors.textPrimary,
         )
         Text(
-            text = "让它干点活、或者把一件长活转成后台任务，过程都会留在这儿。",
+            text = "任务记录将显示在此。",
             style = QuineTheme.typography.footnote,
             color = colors.textSecondary,
             modifier = Modifier.padding(top = 8.dp),

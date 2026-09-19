@@ -70,7 +70,7 @@ class TasksScreenRenderTest {
                 )
             }
         }
-        compose.onNodeWithText("在干活").assertIsDisplayed()
+        compose.onNodeWithText("进行中").assertIsDisplayed()
         compose.onNodeWithText("已完成").assertIsDisplayed()
         compose.onNodeWithText("整理周报").assertIsDisplayed()
         compose.onNodeWithText("修好登录").assertIsDisplayed()
@@ -122,7 +122,7 @@ class TasksScreenRenderTest {
         compose.onNodeWithText("改了 1 个文件").assertIsDisplayed()
         compose.onNodeWithText("跑了 npm test").assertIsDisplayed()
         compose.onNodeWithText("a.txt").assertIsDisplayed()
-        compose.onNodeWithText("这次留下了什么").assertIsDisplayed()
+        compose.onNodeWithText("产物").assertIsDisplayed()
         compose.onNodeWithText("notes/todo.md").assertIsDisplayed()
     }
 

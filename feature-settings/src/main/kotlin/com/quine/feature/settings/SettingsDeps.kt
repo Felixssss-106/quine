@@ -1,6 +1,7 @@
 package com.quine.feature.settings
 
 import com.quine.core.common.IconVariant
+import com.quine.core.common.ReasoningEffort
 import com.quine.core.common.TrustLevel
 import com.quine.core.gateway.ProviderConfig
 import com.quine.core.storage.QuineSettings
@@ -30,6 +31,15 @@ interface SettingsDeps {
     suspend fun applyIconVariant(variant: IconVariant)
 
     suspend fun setTrustLevel(level: TrustLevel)
+
+    suspend fun setReasoningEffort(effort: ReasoningEffort)
+
+    /**
+     * 拉取可用模型 id。
+     *
+     * 失败时返回失败原因（三段式），UI 直接展示；调用方不需要自己翻译异常。
+     */
+    suspend fun fetchModels(): Result<List<String>>
 
     suspend fun saveSafTreeUri(uri: String?)
 

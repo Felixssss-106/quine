@@ -1,5 +1,6 @@
 package com.quine.core.gateway
 
+import com.quine.core.common.ReasoningEffort
 import kotlinx.serialization.json.JsonObject
 
 enum class ChatRole { SYSTEM, USER, ASSISTANT, TOOL }
@@ -32,6 +33,8 @@ data class LlmRequest(
     val tools: List<ToolSchema> = emptyList(),
     val temperature: Double? = null,
     val maxTokens: Int? = null,
+    /** 思考等级；`关闭` 时该参数不会出现在请求体里（见 [ReasoningEffort.wireValue]）。 */
+    val reasoningEffort: ReasoningEffort? = null,
 )
 
 sealed interface LlmEvent {
