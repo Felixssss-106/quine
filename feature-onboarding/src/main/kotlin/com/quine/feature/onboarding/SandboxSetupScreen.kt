@@ -84,6 +84,10 @@ fun SandboxSetupRoute(
         onToggleLog = viewModel::toggleLog,
         onRetry = viewModel::retry,
         onClear = viewModel::clear,
+        // 跳过搭建 = 直接走「完成」（onboarded=true）→ 进主界面。
+        // 文件工具不依赖沙箱，聊天仍可用；代价只是 `shell_run`（跑命令）这条不可用。
+        // 不放 onRetry 那条路是同一档，因为重试必然再失败（rootfs 来源还没定）。
+        onSkip = { viewModel.finish(); onDone() },
     )
 }
 
@@ -95,6 +99,7 @@ fun SandboxSetupScreen(
     onToggleLog: () -> Unit,
     onRetry: () -> Unit,
     onClear: () -> Unit,
+    onSkip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = QuineTheme.colors
@@ -185,6 +190,13 @@ fun SandboxSetupScreen(
                 QuinePrimaryButton(text = "重试", onClick = onRetry, modifier = Modifier.weight(1f))
                 QuineTextButton(text = "清理空间", onClick = onClear)
             }
+            // 屏二失败时给一个出口：rootfs 来源没定 = 重试必然再失败。
+            // 不放这条路会被困在屏二进不了聊天 —— 真机冷启动亲历过一次。
+            Spacer(Modifier.height(dimens.grid * 2))
+            QuineTextButton(
+                text = "暂时跳过搭建（不能用跑命令）",
+                onClick = onSkip,
+            )
         } else {
             Text(
                 text = "首次约 1–3 分钟，之后秒开。占用约 200 MB。",

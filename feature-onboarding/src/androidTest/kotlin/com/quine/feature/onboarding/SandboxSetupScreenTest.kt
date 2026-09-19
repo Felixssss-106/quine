@@ -3,11 +3,13 @@ package com.quine.feature.onboarding
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.quine.core.common.ErrorKind
 import com.quine.core.common.QuineError
 import com.quine.core.design.theme.QuineTheme
 import com.quine.core.sandbox.SandboxStage
 import com.quine.core.sandbox.SandboxState
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,6 +53,7 @@ class SandboxSetupScreenTest {
                     onToggleLog = {},
                     onRetry = {},
                     onClear = {},
+                    onSkip = {},
                 )
             }
         }
@@ -91,14 +94,18 @@ class SandboxSetupScreenTest {
     }
 
     @Test
-    fun 日志默认折叠_展开后能看到内容() {
+    fun 日志默认折叠() {
         render(
             SandboxState.Working(SandboxStage.EXPAND_ROOTFS, 0.4f, listOf("[ok] 收到 48 MB")),
             expanded = false,
         )
-
         compose.onNodeWithText("展开日志（1 行）").assertIsDisplayed()
+    }
 
+    @Test
+    fun 日志展开后显示收起标签() {
+        // 一个测试里只能 setContent 一次 —— 原来写成同方法两次 render 是 pre-existing bug，
+        // 只是那时 runner 配错 → 这个测试方法一次也没真正跑过，现在才发现。
         render(
             SandboxState.Working(SandboxStage.EXPAND_ROOTFS, 0.4f, listOf("[ok] 收到 48 MB")),
             expanded = true,
@@ -112,5 +119,37 @@ class SandboxSetupScreenTest {
 
         compose.onNodeWithText("④ 工具链自检").assertIsDisplayed()
         compose.onNodeWithText("卡在第 ③ 步：存储空间不够。").assertDoesNotExist()
+    }
+
+    @Test
+    fun 失败态有跳过出口() {
+        // 屏二的失败态：rootfs 来源没定时重试必然再失败，必须给一个出口，
+        // 否则真机冷启动就困在这里进不了聊天（亲历过一次）。
+        var skipped = false
+        compose.setContent {
+            QuineTheme {
+                SandboxSetupScreen(
+                    state = failed,
+                    logExpanded = false,
+                    flash = false,
+                    onToggleLog = {},
+                    onRetry = {},
+                    onClear = {},
+                    onSkip = { skipped = true },
+                )
+            }
+        }
+
+        compose.onNodeWithText("卡在第 ③ 步：存储空间不够。").assertIsDisplayed()
+        compose.onNodeWithText("暂时跳过搭建（不能用跑命令）").assertIsDisplayed()
+        compose.onNodeWithText("暂时跳过搭建（不能用跑命令）").performClick()
+        assertTrue(skipped)
+    }
+
+    @Test
+    fun 未失败时不显示跳过按钮() {
+        // 跳过只在失败态出现 —— 在跑的时候强行跳过等于中途打断，反而更糟。
+        render(SandboxState.Working(SandboxStage.CHECK_DEVICE, 0f, emptyList()))
+        compose.onNodeWithText("暂时跳过搭建（不能用跑命令）").assertDoesNotExist()
     }
 }
