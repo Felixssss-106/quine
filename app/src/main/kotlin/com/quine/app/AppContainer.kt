@@ -33,9 +33,7 @@ import com.quine.core.tools.SnapshotRef
 import com.quine.core.tools.SnapshotRegistry
 import com.quine.core.tools.ToolContext
 import com.quine.core.tools.ToolRegistry
-import com.quine.core.tools.builtin.FsReadTool
-import com.quine.core.tools.builtin.FsListTool
-import com.quine.core.tools.builtin.FsWriteTool
+import com.quine.core.tools.builtin.BuiltinTools
 import com.quine.feature.chat.ChatDeps
 import com.quine.feature.onboarding.OnboardingDeps
 import com.quine.feature.settings.SettingsDeps
@@ -72,7 +70,8 @@ class AppContainer(private val app: Application) {
 
     val iconAlias: IconAliasController = ActivityAliasIconController(app)
 
-    private val toolRegistry = ToolRegistry(listOf(FsReadTool(), FsWriteTool(), FsListTool()))
+    // 工具清单集中在 BuiltinTools：逐个 new 的话，漏掉一个既不报错、也不会被测试发现。
+    private val toolRegistry = ToolRegistry(BuiltinTools.all)
 
     /**
      * 重试的**唯一权威在 loop**，所以这里把 provider 的重试预算关掉。
