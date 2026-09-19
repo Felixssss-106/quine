@@ -35,6 +35,8 @@ dependencies {
     // 公开接口（OnboardingDeps）暴露 QuineSettings / ProviderConfig，故为 api。
     api(project(":core-storage"))
     api(project(":core-gateway"))
+    // SandboxSetupDeps 暴露 SandboxState，故为 api。
+    api(project(":core-sandbox"))
     implementation(project(":core-design"))
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -42,4 +44,12 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.documentfile)
     implementation(libs.kotlinx.coroutines.core)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }

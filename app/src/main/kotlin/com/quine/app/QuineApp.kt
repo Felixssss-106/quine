@@ -13,10 +13,12 @@ import com.quine.core.design.theme.QuineTheme
 import com.quine.core.storage.QuineSettings
 import com.quine.feature.chat.ChatRoute
 import com.quine.feature.onboarding.OnboardingRoute
+import com.quine.feature.onboarding.SandboxSetupRoute
 import com.quine.feature.settings.SettingsRoute
 
 private object Routes {
     const val ONBOARDING = "onboarding"
+    const val SANDBOX_SETUP = "sandbox_setup"
     const val CHAT = "chat"
     const val SETTINGS = "settings"
 }
@@ -47,6 +49,14 @@ fun QuineApp(container: AppContainer) {
             composable(Routes.ONBOARDING) {
                 OnboardingRoute(
                     deps = container.onboardingDeps,
+                    // 屏一接完模型 → 屏二搭沙箱（page-specs §1 的两屏顺序）
+                    onDone = { navController.navigate(Routes.SANDBOX_SETUP) },
+                )
+            }
+
+            composable(Routes.SANDBOX_SETUP) {
+                SandboxSetupRoute(
+                    deps = container.sandboxSetupDeps,
                     onDone = {
                         navController.navigate(Routes.CHAT) {
                             popUpTo(Routes.ONBOARDING) { inclusive = true }

@@ -84,7 +84,7 @@ class SandboxInstaller(
                 emit(SandboxState.Working(SandboxStage.EXPAND_ROOTFS, progress, log.toList()))
             }
         } catch (error: Exception) {
-            return fail(SandboxStage.EXPAND_ROOTFS, downloadFailed(), log, emit)
+            return fail(SandboxStage.EXPAND_ROOTFS, downloadFailed(error.message), log, emit)
         }
         log += "[ok] 收到 ${(tarball.length() / MB)} MB，sha256=${actual.take(12)}…"
 
@@ -208,9 +208,14 @@ class SandboxInstaller(
             nextStep = "确认存储空间正常后点「重试」。",
         )
 
-        fun downloadFailed() = QuineError(
+        /** @param reason 具体原因。没有来源配置时它比"网络断了"更接近真相。 */
+        fun downloadFailed(reason: String? = null) = QuineError(
             kind = ErrorKind.NETWORK,
-            message = "工作区下载到一半断了。",
+            message = if (reason.isNullOrBlank()) {
+                "工作区下载到一半断了。"
+            } else {
+                "工作区没能取回来：$reason"
+            },
             impact = "工作区没搭起来。",
             nextStep = "检查网络后点「重试」，会从头重新下载。",
         )

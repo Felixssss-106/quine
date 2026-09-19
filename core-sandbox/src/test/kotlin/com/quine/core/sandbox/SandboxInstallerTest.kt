@@ -108,7 +108,9 @@ class SandboxInstallerTest {
 
         val failed = final as SandboxState.Failed
         assertEquals(SandboxStage.EXPAND_ROOTFS, failed.stage)
-        assertTrue(failed.error.message.contains("下载"))
+        assertTrue(failed.error.message.contains("取回来"))
+        // 具体原因要带出来：没有来源配置时"网络断了"是句假话
+        assertTrue(failed.error.message.contains("网络断了"))
     }
 
     @Test

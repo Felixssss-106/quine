@@ -17,6 +17,9 @@ import com.quine.core.gateway.RetryPolicy
 import com.quine.core.gateway.ToolCallRequest
 import com.quine.core.loop.AgentLoop
 import com.quine.core.loop.LoopConfig
+import com.quine.core.sandbox.RootfsSource
+import com.quine.core.sandbox.SandboxInstaller
+import com.quine.core.sandbox.SandboxState
 import com.quine.core.storage.ApiKeyStore
 import com.quine.core.storage.ChatMessage
 import com.quine.core.storage.Conversation
@@ -36,10 +39,13 @@ import com.quine.core.tools.ToolRegistry
 import com.quine.core.tools.builtin.BuiltinTools
 import com.quine.feature.chat.ChatDeps
 import com.quine.feature.onboarding.OnboardingDeps
+import com.quine.feature.onboarding.SandboxSetupDeps
 import com.quine.feature.settings.SettingsDeps
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
 import java.util.UUID
 
 /**
@@ -85,6 +91,8 @@ class AppContainer(private val app: Application) {
     private val providerProbe = ProviderProbe(providerFactory)
 
     val onboardingDeps: OnboardingDeps = OnboardingDepsImpl()
+
+    val sandboxSetupDeps: SandboxSetupDeps = SandboxSetupDepsImpl()
 
     val chatDeps: ChatDeps = ChatDepsImpl()
 
@@ -170,6 +178,7 @@ class AppContainer(private val app: Application) {
 
     private companion object {
         const val SNAPSHOT_DIR = "snapshots"
+        const val ROOTFS_DIR = "rootfs"
     }
 
     private fun appVersion(): String = runCatching {
@@ -194,6 +203,40 @@ class AppContainer(private val app: Application) {
         override suspend fun completeOnboarding() = settingsStore.setOnboarded(true)
 
         override suspend fun workspaceLabel(): String = workspaces.workspace().label
+    }
+
+    private inner class SandboxSetupDepsImpl : SandboxSetupDeps {
+
+        private val installer: SandboxInstaller by lazy {
+            SandboxInstaller(
+                root = File(app.filesDir, ROOTFS_DIR),
+                source = PendingRootfsSource(),
+            )
+        }
+
+        override fun isSandboxReady(): Boolean = installer.isReady()
+
+        override suspend fun installSandbox(onState: suspend (SandboxState) -> Unit): SandboxState =
+            installer.install(onState)
+
+        override fun clearSandbox() = installer.clearRoot()
+
+        override suspend fun completeOnboarding() = settingsStore.setOnboarded(true)
+    }
+
+    /**
+     * **rootfs 的来源还没定**（见 `docs/plans/m1.md`）：用哪个发行版、从哪个镜像站下、
+     * 要不要内置进 APK，都还没拍板。
+     *
+     * 所以这里不假装有源，而是把「没配置」当成第 ② 步的失败说清楚 ——
+     * 比"网络断了"更接近真相，也不会让人以为沙箱已经能用。
+     */
+    private class PendingRootfsSource : RootfsSource {
+        override val expectedSha256: String? = null
+        override val sizeBytes: Long? = null
+
+        override fun open(): InputStream =
+            throw IOException("还没配置 Linux 工作区的下载地址（M1 待定项）")
     }
 
     private inner class ChatDepsImpl : ChatDeps {
