@@ -22,6 +22,7 @@ include(
     ":core-design",
     ":core-gateway",
     ":core-loop",
+    ":core-sandbox",
     ":core-storage",
     ":core-tools",
     ":feature-chat",
