@@ -66,7 +66,7 @@ class ChatScreenRenderTest {
 
         compose.onNodeWithText("看看 a.txt").assertIsDisplayed()
         compose.onNodeWithText("读了 a.txt").assertIsDisplayed()
-        compose.onNodeWithText("让它干点什么…").assertIsDisplayed()
+        compose.onNodeWithText("输入指令").assertIsDisplayed()
         compose.onNodeWithText("自动批准").assertIsDisplayed()
     }
 

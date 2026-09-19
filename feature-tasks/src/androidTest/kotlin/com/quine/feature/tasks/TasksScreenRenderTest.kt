@@ -140,7 +140,7 @@ class TasksScreenRenderTest {
             }
         }
         compose.onNodeWithText("停止").assertIsDisplayed()
-        compose.onNodeWithText("去聊天里看看").assertIsDisplayed()
+        compose.onNodeWithText("前往会话").assertIsDisplayed()
     }
 
     @Test fun detail_gone_task_says_so() {
@@ -155,6 +155,6 @@ class TasksScreenRenderTest {
                 )
             }
         }
-        compose.onNodeWithText("这个任务已经不在了。").assertIsDisplayed()
+        compose.onNodeWithText("任务不存在").assertIsDisplayed()
     }
 }

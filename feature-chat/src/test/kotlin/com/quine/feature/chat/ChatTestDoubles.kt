@@ -63,6 +63,8 @@ class FakeProvider : LlmProvider {
     }
 
     override suspend fun checkKey(): Result<Unit> = Result.success(Unit)
+
+    override suspend fun models(): Result<List<String>> = Result.success(emptyList())
 }
 
 /** 内存版 ChatDeps：把 Room / DataStore 换成列表与 MutableStateFlow。 */

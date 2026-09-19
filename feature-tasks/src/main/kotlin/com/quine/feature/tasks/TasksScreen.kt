@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.quine.core.design.component.QuineBreathingDot
+import com.quine.core.design.component.QuineItemEntrance
 import com.quine.core.design.component.QuineDivider
 import com.quine.core.design.theme.QuineTheme
 import com.quine.core.storage.TaskStatus
@@ -180,16 +181,18 @@ private fun TaskSection(
         ),
     )
     Column {
-        tasks.forEach { task ->
-            TaskRow(
-                task = task,
-                onClick = { onOpenTask(task.id) },
-                onCancel = if (task.status == TaskStatus.RUNNING || task.status == TaskStatus.QUEUED) {
-                    { onCancel(task.id) }
-                } else {
-                    null
-                },
-            )
+        tasks.forEachIndexed { index, task ->
+            QuineItemEntrance(index = index) {
+                TaskRow(
+                    task = task,
+                    onClick = { onOpenTask(task.id) },
+                    onCancel = if (task.status == TaskStatus.RUNNING || task.status == TaskStatus.QUEUED) {
+                        { onCancel(task.id) }
+                    } else {
+                        null
+                    },
+                )
+            }
         }
     }
 }

@@ -55,4 +55,8 @@ class FakeProvider : LlmProvider {
     }
 
     override suspend fun checkKey(): Result<Unit> = checkKeyResult
+
+    var modelsResult: Result<List<String>> = Result.success(emptyList())
+
+    override suspend fun models(): Result<List<String>> = modelsResult
 }

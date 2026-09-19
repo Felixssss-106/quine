@@ -35,14 +35,18 @@ fun QuinePrimaryButton(
     val colors = QuineTheme.colors
     val dimens = QuineTheme.dimens
     val haptics = rememberQuineHaptics()
+    val press = rememberPressScale(enabled = enabled && !busy)
 
     Button(
         onClick = {
             haptics.light()
             onClick()
         },
-        modifier = modifier.height(dimens.buttonHeight),
+        modifier = modifier
+            .height(dimens.buttonHeight)
+            .then(press.modifier),
         enabled = enabled && !busy,
+        interactionSource = press.interactionSource,
         shape = RoundedCornerShape(dimens.radiusPill),
         colors = ButtonDefaults.buttonColors(
             containerColor = colors.ink,
@@ -80,13 +84,18 @@ fun QuineSecondaryButton(
     val dimens = QuineTheme.dimens
     val haptics = rememberQuineHaptics()
 
+    val press = rememberPressScale(enabled = enabled)
+
     OutlinedButton(
         onClick = {
             haptics.light()
             onClick()
         },
-        modifier = modifier.height(dimens.buttonHeight),
+        modifier = modifier
+            .height(dimens.buttonHeight)
+            .then(press.modifier),
         enabled = enabled,
+        interactionSource = press.interactionSource,
         shape = RoundedCornerShape(dimens.radiusPill),
         border = BorderStroke(dimens.hairline, colors.line),
         colors = ButtonDefaults.outlinedButtonColors(
@@ -109,14 +118,18 @@ fun QuineTextButton(
 ) {
     val colors = QuineTheme.colors
     val haptics = rememberQuineHaptics()
+    val press = rememberPressScale(enabled = enabled)
 
     TextButton(
         onClick = {
             haptics.light()
             onClick()
         },
-        modifier = modifier.defaultMinSize(minHeight = 32.dp),
+        modifier = modifier
+            .defaultMinSize(minHeight = 32.dp)
+            .then(press.modifier),
         enabled = enabled,
+        interactionSource = press.interactionSource,
         colors = ButtonDefaults.textButtonColors(
             contentColor = colors.accent,
             disabledContentColor = colors.textTertiary,

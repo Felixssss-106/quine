@@ -108,6 +108,12 @@ class AppContainer(private val app: Application) {
 
     val settingsDeps: SettingsDeps = SettingsDepsImpl()
 
+    /** 横屏侧边栏用的会话列表（app 层聚合：feature 之间不互相依赖）。 */
+    fun observeConversations(): Flow<List<Conversation>> = conversations.observeConversations()
+
+    /** 横屏侧边栏用的任务列表。 */
+    fun observeTaskRuns(): Flow<List<TaskRunEntity>> = database.taskDao().observeRuns()
+
     /** 按给定配置建一个 provider（Key 从 Keystore 取，明文不进调用栈之外）。 */
     private fun newProviderFor(provider: ProviderConfig): LlmProvider = providerFactory.create(
         baseUrl = provider.baseUrl,
