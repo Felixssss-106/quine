@@ -11,8 +11,23 @@
   `TaskDao` + v1→v2 迁移。数据模型直接取 `agent-prompt.md` §2.6，不是另起炉灶。
   - 迁移只新增表，不动 `conversations` / `messages`；有仪器测试守着「升级后旧会话不丢」。
   - `Snapshot.blobRef` 是内容寻址（同一内容只存一份），回滚 = 把 blob 写回原路径。
-- `docs/plans/m1.md` 里的三个前置决定已自行定下（Alpine 起步 / 旧版先实测再定策略 /
-  自用验收三件真事取自简报 §3.1 与 §3.4 的验收句），均标注可推翻。
+- `docs/plans/m1.md` 的三个前置决定：① 沙箱发行版定为 Alpine 起步；② **Android 10–13 已闭环**；
+  ③ 自用验收三件真事取自简报 §3.1 / §3.4。均标注可推翻。
+
+### 已闭环：Android 10–13 上执行二进制（M0 时期标记的最大风险）
+
+M0 开局标过：「Android 10+ 对从应用私有目录执行二进制有 SELinux 限制，直接决定 proot
+沙箱走哪条路」。装了 API 29 镜像（AVD `QpApi29`）实测后确认：**不存在这个限制**。
+
+| 场景 | API 29 / Android 10 | API 36 / Android 16 |
+|---|---|---|
+| 应用主目录 exec ELF | ✅ | ✅ |
+| `files/rootfs/bin/` 子目录 exec（真实 rootfs 布局） | ✅ | ✅ |
+| 带 `LD_LIBRARY_PATH` exec | ✅ | — |
+
+→ minSdk 29 → 36 行为一致，**沙箱按统一方案实现即可，不需要降级分支或降级提示**。
+真正的约束在打包（二进制须以 `libxxx.so` 放进 `jniLibs/<abi>/` + `extractNativeLibs=true`），不在执行。
+仍建议真机（Android 14+）复测一次，模拟器与真机的 SELinux 策略可能有差异。
 
 ### Added · M0 骨架
 
