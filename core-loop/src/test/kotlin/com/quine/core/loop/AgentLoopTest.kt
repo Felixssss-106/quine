@@ -6,6 +6,7 @@ import com.quine.core.gateway.ChatRole
 import com.quine.core.gateway.LlmEvent
 import com.quine.core.gateway.LlmMessage
 import com.quine.core.gateway.RetryPolicy
+import com.quine.core.tools.DenyingSnapshotter
 import com.quine.core.tools.ToolContext
 import com.quine.core.tools.ToolRegistry
 import com.quine.core.tools.builtin.FsReadTool
@@ -31,7 +32,11 @@ class AgentLoopTest {
 
     private val registry = ToolRegistry(listOf(FsReadTool()))
 
-    private fun context() = ToolContext(workspace = PrivateWorkspace(temp.root))
+    private fun context() = ToolContext(
+        workspace = PrivateWorkspace(temp.root),
+        // 这批用例不写文件；用拒绝式快照，万一有写入会被拦下而不是静默通过。
+        snapshotter = DenyingSnapshotter,
+    )
 
     private fun loop(
         provider: FakeProvider,

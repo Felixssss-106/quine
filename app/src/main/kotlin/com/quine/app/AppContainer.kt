@@ -26,14 +26,19 @@ import com.quine.core.storage.MessageMeta
 import com.quine.core.storage.QuineDatabase
 import com.quine.core.storage.QuineSettings
 import com.quine.core.storage.SettingsStore
+import com.quine.core.storage.SnapshotStore
+import com.quine.core.tools.Snapshotter
 import com.quine.core.tools.ToolContext
 import com.quine.core.tools.ToolRegistry
 import com.quine.core.tools.builtin.FsReadTool
+import com.quine.core.tools.builtin.FsListTool
+import com.quine.core.tools.builtin.FsWriteTool
 import com.quine.feature.chat.ChatDeps
 import com.quine.feature.onboarding.OnboardingDeps
 import com.quine.feature.settings.SettingsDeps
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import java.io.File
 
 /**
  * 手工装配（M0 不引 DI 框架）。
@@ -58,9 +63,12 @@ class AppContainer(private val app: Application) {
 
     val workspaces = AppWorkspaceProvider(app, settingsStore)
 
+    /** 快照 blob 存放处（内容寻址，同一内容只存一份）。 */
+    val snapshotStore: SnapshotStore by lazy { SnapshotStore(File(app.filesDir, SNAPSHOT_DIR)) }
+
     val iconAlias: IconAliasController = ActivityAliasIconController(app)
 
-    private val toolRegistry = ToolRegistry(listOf(FsReadTool()))
+    private val toolRegistry = ToolRegistry(listOf(FsReadTool(), FsWriteTool(), FsListTool()))
 
     /**
      * 重试的**唯一权威在 loop**，所以这里把 provider 的重试预算关掉。
@@ -94,7 +102,21 @@ class AppContainer(private val app: Application) {
         )
     }
 
-    private suspend fun toolContext(): ToolContext = ToolContext(workspace = workspaces.workspace())
+    private suspend fun toolContext(): ToolContext = ToolContext(
+        workspace = workspaces.workspace(),
+        snapshotter = StoreSnapshotter(snapshotStore),
+    )
+
+    /** 把 `core-tools` 的快照接口接到 `core-storage` 的 blob 存储上。 */
+    private class StoreSnapshotter(private val store: SnapshotStore) : Snapshotter {
+        // 失败返回 null —— 写工具据此拒绝写入，绝不留下没有快照的改动。
+        override fun capture(path: String, oldBytes: ByteArray): String? =
+            runCatching { store.put(oldBytes) }.getOrNull()
+    }
+
+    private companion object {
+        const val SNAPSHOT_DIR = "snapshots"
+    }
 
     private fun appVersion(): String = runCatching {
         app.packageManager.getPackageInfo(app.packageName, 0).versionName

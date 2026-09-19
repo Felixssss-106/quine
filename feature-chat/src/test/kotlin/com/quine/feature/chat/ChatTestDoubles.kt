@@ -131,7 +131,11 @@ class FakeChatDeps(
     )
 
     override suspend fun toolContext(): ToolContext =
-        ToolContext(workspace = PrivateWorkspace(workspaceRoot))
+        ToolContext(
+            workspace = PrivateWorkspace(workspaceRoot),
+            // 聊天面用例不写文件；拒绝式快照可确保万一有写入会被拦下。
+            snapshotter = com.quine.core.tools.DenyingSnapshotter,
+        )
 
     override suspend fun setActiveConversationId(id: String) = Unit
 

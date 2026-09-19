@@ -24,6 +24,43 @@ interface Workspace {
      * @param maxBytes 最多读多少字节；超出即截断。
      */
     suspend fun read(relativePath: String, offsetBytes: Long = 0, maxBytes: Int): ReadOutcome
+
+    /**
+     * 读原始字节 —— **快照用**。快照与回滚必须按字节走，不能过文本，
+     * 否则二进制文件（图片、压缩包）回滚后会被破坏。
+     */
+    fun readBytes(relativePath: String): ByteArray?
+
+    /**
+     * 写文件。`expectedOldBytes` 不为空时做**乐观并发检查**：内容不一致就拒绝写入，
+     * 避免模型基于过期内容覆盖掉用户的改动。
+     */
+    fun writeBytes(
+        relativePath: String,
+        bytes: ByteArray,
+        expectedOldBytes: ByteArray? = null,
+    ): WriteOutcome
+
+    /** 列目录；文件返回空列表。 */
+    fun list(relativePath: String = ""): List<WorkspaceEntry>?
+
+    fun delete(relativePath: String): Boolean
+}
+
+/** 目录条目。 */
+data class WorkspaceEntry(val name: String, val isDirectory: Boolean, val size: Long?)
+
+sealed interface WriteOutcome {
+    data class Ok(val bytesWritten: Long) : WriteOutcome
+
+    data object NotFound : WriteOutcome
+
+    data object IsDirectory : WriteOutcome
+
+    /** 内容自上次读取后被人改过，拒绝覆盖。 */
+    data object Conflict : WriteOutcome
+
+    data class Failed(val error: QuineError) : WriteOutcome
 }
 
 sealed interface ReadOutcome {

@@ -2,6 +2,7 @@ package com.quine.core.tools.builtin
 
 import com.quine.core.common.ErrorKind
 import com.quine.core.tools.ToolContext
+import com.quine.core.tools.StubSnapshotter
 import com.quine.core.tools.workspace.PrivateWorkspace
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -23,7 +24,10 @@ class FsReadToolTest {
     private val tool = FsReadTool()
     private val json = Json { ignoreUnknownKeys = true }
 
-    private fun context() = ToolContext(workspace = PrivateWorkspace(temp.root))
+    private fun context() = ToolContext(
+        workspace = PrivateWorkspace(temp.root),
+        snapshotter = StubSnapshotter,
+    )
 
     private fun args(text: String): JsonObject = json.parseToJsonElement(text).jsonObject
 

@@ -11,7 +11,15 @@
   `TaskDao` + v1→v2 迁移。数据模型直接取 `agent-prompt.md` §2.6，不是另起炉灶。
   - 迁移只新增表，不动 `conversations` / `messages`；有仪器测试守着「升级后旧会话不丢」。
   - `Snapshot.blobRef` 是内容寻址（同一内容只存一份），回滚 = 把 blob 写回原路径。
-- `docs/plans/m1.md` 的三个前置决定：① 沙箱发行版定为 Alpine 起步；② **Android 10–13 已闭环**；
+- `core-tools`：文件写与列目录，带**写入前强制快照**。
+  - `Workspace` 扩展：`readBytes`（快照按字节走，二进制文件才不会被回滚破坏）、
+    `writeBytes`（支持乐观并发检查）、`list`、`delete`；`PrivateWorkspace` 与 `SafWorkspace` 都已实现。
+  - `fs_write`：**拿不到快照就拒绝写入**（fail closed），绝不留下撤不回的改动；
+    写入前读到的内容会作为 `expectedOldBytes` 再校验一次，挡住「读取后被别人改过」的覆盖。
+  - `fs_list`：列目录，目录在前、按名排序。
+  - `Snapshotter` 接口（依赖倒置，实现在 app 层接 `SnapshotStore`）；`ToolContext.snapshotter`
+    **刻意不给默认值**，避免调用方在不知不觉中跳过快照这条红线。
+  - 写入走「临时文件 + rename」，写到一半崩了不会留下半截文件。
   ③ 自用验收三件真事取自简报 §3.1 / §3.4。均标注可推翻。
 
 ### 已闭环：Android 10–13 上执行二进制（M0 时期标记的最大风险）
